@@ -1,0 +1,16 @@
+id: no-greater-than
+valid:
+  - "a < b"
+  - "a <= b"
+  - "5 < x && x < 10"
+  - "a === b"
+  - "a !== b"
+  - "a >> b"
+  - "a >>> b"
+invalid:
+  - "a > b"
+  - "x > 5"
+  - "foo.bar > 10"
+  - "a + 1 > b * 2"
+  - "(a || b) > c"
+  - "foo() > b"

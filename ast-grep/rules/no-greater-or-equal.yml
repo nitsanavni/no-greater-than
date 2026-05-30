@@ -1,0 +1,8 @@
+id: no-greater-or-equal
+language: JavaScript
+severity: warning
+message: "Use '<=' so the comparison reads like a number line."
+rule:
+  pattern: $A >= $B
+# Always-parenthesize (see no-greater-than.yml for the rationale).
+fix: ($B) <= ($A)

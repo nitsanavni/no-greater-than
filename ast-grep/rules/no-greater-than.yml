@@ -1,0 +1,14 @@
+id: no-greater-than
+language: JavaScript
+severity: warning
+message: "Use '<' so the comparison reads like a number line."
+note: |
+  `a > b` is the same boolean as `b < a`. Rewriting keeps the meaning;
+  only side-effect evaluation order changes (see README caveats).
+rule:
+  pattern: $A > $B
+# Always-parenthesize: a declarative template can't decide *when* parens are
+# needed (the way ESLint can), so it must wrap unconditionally to stay correct
+# for chained comparisons like `a > b > c`. Redundant parens are harmless and a
+# formatter will strip them. CAVEAT: this does NOT guard side effects — see README.
+fix: ($B) < ($A)

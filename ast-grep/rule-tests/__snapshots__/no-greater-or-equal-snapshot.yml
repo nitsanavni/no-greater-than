@@ -1,0 +1,16 @@
+id: no-greater-or-equal
+snapshots:
+  a >= b:
+    fixed: (b) <= (a)
+    labels:
+    - source: a >= b
+      style: primary
+      start: 0
+      end: 6
+  arr[i] >= count:
+    fixed: (count) <= (arr[i])
+    labels:
+    - source: arr[i] >= count
+      style: primary
+      start: 0
+      end: 15

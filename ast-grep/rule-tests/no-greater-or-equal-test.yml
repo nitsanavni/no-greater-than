@@ -1,0 +1,10 @@
+id: no-greater-or-equal
+valid:
+  - "a < b"
+  - "a <= b"
+  - "a > b"
+  - "a >> b"
+  - "a >>= b"
+invalid:
+  - "a >= b"
+  - "arr[i] >= count"
