@@ -1,0 +1,87 @@
+{
+  "_comment": "Canonical cases shared by all three implementations. `expected` is the correct < / <= rewrite. `autofixable` is whether a side-effect-safe autofixer should rewrite automatically (vs. only flag/suggest).",
+  "shouldFlag": [
+    {
+      "category": "simple",
+      "code": "a > b",
+      "expected": "b < a",
+      "autofixable": true
+    },
+    {
+      "category": "simple",
+      "code": "a >= b",
+      "expected": "b <= a",
+      "autofixable": true
+    },
+    {
+      "category": "simple",
+      "code": "x > 5",
+      "expected": "5 < x",
+      "autofixable": true,
+      "note": "becomes a Yoda-style single comparison; consumer decides if that's wanted"
+    },
+    {
+      "category": "member",
+      "code": "foo.bar > 10",
+      "expected": "10 < foo.bar",
+      "autofixable": true
+    },
+    {
+      "category": "member",
+      "code": "arr[i] >= count",
+      "expected": "count <= arr[i]",
+      "autofixable": true
+    },
+    {
+      "category": "precedence",
+      "code": "a + 1 > b * 2",
+      "expected": "(b * 2) < (a + 1)",
+      "autofixable": true,
+      "note": "moved operands are binary expressions -> must be parenthesized"
+    },
+    {
+      "category": "precedence",
+      "code": "(a || b) > c",
+      "expected": "c < (a || b)",
+      "autofixable": true,
+      "note": "moved logical-expression operand must stay parenthesized"
+    },
+    {
+      "category": "precedence",
+      "code": "a > b > c",
+      "expected": "c < (a > b)",
+      "autofixable": true,
+      "note": "re-association hazard: c < a > b would parse as (c < a) > b. Outer node only; inner a>b flagged separately."
+    },
+    {
+      "category": "range",
+      "code": "5 < x && x > 1",
+      "expected": "5 < x && 1 < x",
+      "autofixable": true
+    },
+    {
+      "category": "side-effect",
+      "code": "foo() > b",
+      "expected": "b < foo()",
+      "autofixable": false,
+      "note": "call has side effects; swapping changes eval order -> flag/suggest, don't auto-rewrite"
+    },
+    {
+      "category": "side-effect",
+      "code": "count++ > limit",
+      "expected": "limit < count++",
+      "autofixable": false,
+      "note": "update expression mutates; do not auto-rewrite"
+    }
+  ],
+  "shouldNotFlag": [
+    { "code": "a < b", "note": "already less-than" },
+    { "code": "a <= b", "note": "already less-than-or-equal" },
+    { "code": "5 < x && x < 10", "note": "canonical number-line range" },
+    { "code": "a === b", "note": "equality, not relational" },
+    { "code": "a !== b", "note": "inequality, not relational" },
+    { "code": "a >> b", "note": "right shift, not greater-than" },
+    { "code": "a >>> b", "note": "unsigned right shift" },
+    { "code": "a >>= b", "note": "shift-assign" }
+  ]
+}
