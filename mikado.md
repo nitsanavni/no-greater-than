@@ -2,14 +2,14 @@
 
 - [x] confirm the corpus ground truth (8 real >/>= sites: 145, 154, 158, 505, 562, 687, 865, 946; 3 TS-generic non-sites correctly ignored: 361, 609, 719)
 - [x] eslint: detection correct (TS parser configured, all 8 flagged, generics ignored)
-  - [ ] eslint: improve fix coverage / documentation
-    - [ ] auto-fix line 562 when RHS is a known-pure builtin call (e.g. Date.parse), or document why call-expression operands downgrade to suggestion-only (eslint) @leaf
-    - [ ] confirm literal-on-left flips like '0 < x' match the rule's number-line reading intent (current output is correct) (eslint) @leaf
+  - [x] eslint: improve fix coverage / documentation
+    - [x] auto-fix when RHS is a known-pure builtin call (Date.parse etc.) — done via PURE_STATIC_CALLS allowlist (commit e2c14cc)
+    - [x] confirm literal-on-left flips like '0 < x' match the number-line intent (current output correct)
 - [ ] biome: reach parity with eslint
   - [x] biome: detection correct (native TS parsing, all 8 flagged, no generic false positives)
-  - [ ] biome: implement autofix/rewrite emitting the flipped expression so it can be applied, not just reported (biome) @leaf
-  - [ ] biome: keep GritQL pattern targeting only relational binary expressions (>, >=), not type-level syntax (already confirmed) (biome) @leaf
-- [ ] astgrep: fix total false-negative (currently broken on every site)
-  - [ ] change 'language: JavaScript' to 'language: TypeScript' in both YAML rule files under /Users/nitsanavni/code/no-greater-than/ast-grep/rules/*.yml so $A > $B and $A >= $B patterns match the .ts source (astgrep) @leaf
-  - [ ] add a regression test confirming the TS parser does NOT match generic type-args (lines 361/609/719: WeakMap<Response, Request>, Promise<unknown>) as binary comparisons after the language switch (astgrep) @leaf
-  - [ ] provide both a TypeScript and a Tsx rule variant (or run with --lang) so .tsx files are also covered (astgrep) @leaf
+  - [!] biome: implement autofix/rewrite — BLOCKED: Biome v2 GritQL plugins cannot emit fixes yet (framework limitation, not ours). Detect-only by design.
+  - [x] biome: keep GritQL pattern targeting only relational binary expressions (already confirmed)
+- [x] astgrep: fix total false-negative (was broken on every TS site)
+  - [x] add TypeScript rule variants so $A > $B / $A >= $B match .ts source (rules/*-ts.yml)
+  - [x] regression test: TS parser does NOT match generic type-args (Array<T>, Promise<unknown>, WeakMap<…>) — rule-tests/*-ts-test.yml
+  - [x] add Tsx rule variants so .tsx (JSX + arrow-generics) is covered (rules/*-tsx.yml)

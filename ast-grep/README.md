@@ -6,10 +6,16 @@ A grep/lint/codemod hybrid (tree-sitter, Rust). The whole rule is a few lines of
 
 ## Files
 
-- `rules/no-greater-than.yml` — `$A > $B` → `($B) < ($A)`
-- `rules/no-greater-or-equal.yml` — `$A >= $B` → `($B) <= ($A)`
+- `rules/no-greater-than{,-ts,-tsx}.yml` — `$A > $B` → `($B) < ($A)` for JS / TS / TSX
+- `rules/no-greater-or-equal{,-ts,-tsx}.yml` — `$A >= $B` → `($B) <= ($A)` for JS / TS / TSX
 - `sgconfig.yml` — points ast-grep at `rules/` and the test dir
 - `rule-tests/` — `ast-grep test` cases + snapshots
+
+> **TS/TSX variants** exist because ast-grep maps each language to its own parser:
+> a `language: JavaScript` rule silently matches **nothing** in a `.ts` file. The eval
+> caught this (ast-grep flagged 0/8 real comparisons in a TypeScript file). The TS/TSX
+> rules use tree-sitter-typescript, which parses generics (`Array<T>`) and JSX as their
+> own node kinds — so they're never mistaken for `>` comparisons.
 
 ## Run
 
