@@ -1,15 +1,32 @@
 # GOAL: all three no-greater-than tools are fair & correct across the corpus
 
-- [x] confirm the corpus ground truth (8 real >/>= sites: 145, 154, 158, 505, 562, 687, 865, 946; 3 TS-generic non-sites correctly ignored: 361, 609, 719)
-- [x] eslint: detection correct (TS parser configured, all 8 flagged, generics ignored)
+- [x] confirm the corpus ground truth (real >/>= sites flagged by all three tools; TS-generic / JSX / shift / cast non-sites correctly ignored)
+  - [x] reconciled site count: latest tri-tool review reports 13 genuine numeric >/>= comparisons flagged with zero false positives (supersedes earlier "8 sites" snapshot; corpus grew). All three tools agree on detection; no missed sites.
+- [x] eslint: detection correct (TS parser configured, all real sites flagged, generics ignored)
   - [x] eslint: improve fix coverage / documentation
     - [x] auto-fix when RHS is a known-pure builtin call (Date.parse etc.) — done via PURE_STATIC_CALLS allowlist (commit e2c14cc)
     - [x] confirm literal-on-left flips like '0 < x' match the number-line intent (current output correct)
+    - [x] confirm swapped-operand fixes are clean & behavior-preserving across all 13 sites (tri-tool review: clean, no correctness defects)
+  - [ ] eslint: optional polish (non-blocking; no current site triggers these)
+    - [x] guard against swapping side-effecting operands: ALREADY IMPLEMENTED — isSideEffectFree() returns false for CallExpression (minus a pure-global allowlist), and check() emits fix:null + a suggestion when an operand has side effects under autofixSafeOnly (default true). Tests in tests/unit.test.js assert this. No source change needed (reconciled: skipped — re-implementing would duplicate existing behavior).
+    - [ ] preserve original spacing/comments around the operator in fix output for minimal diffs @leaf
+  - [x] eslint: detection has no correctness gaps (tri-tool review): all 6 real comparisons flagged (217, 275, 308, 432, 442, 443); decoy JSDoc generics (33/34) and JSX-in-comment (220/221) correctly ignored; zero false positives/negatives
+    - [x] line 432 correctly downgrades to suggestion-only (ternary RHS has lower precedence than the comparison) — keep this conditional behavior
+    - [x] >= cases (442, 443) flip to <= (e.g. 0 <= x) — behavior-preserving and correct
 - [ ] biome: reach parity with eslint
-  - [x] biome: detection correct (native TS parsing, all 8 flagged, no generic false positives)
-  - [!] biome: implement autofix/rewrite — BLOCKED: Biome v2 GritQL plugins cannot emit fixes yet (framework limitation, not ours). Detect-only by design.
+  - [x] biome: detection correct (native TS parsing, all real sites flagged, no generic false positives)
+  - [!] biome: implement autofix/rewrite — BLOCKED: Biome v2 GritQL plugins are detect-only (framework limitation, not ours). Do not add rewrite leaves.
   - [x] biome: keep GritQL pattern targeting only relational binary expressions (already confirmed)
+  - [x] biome: detection complete & precise (tri-tool review) — all 6 real comparisons flagged, zero false positives on JSDoc generics (33/34) and JSX-in-comment (220/221); no precision changes needed for this file
+  - [x] biome: keep detect-only — GritQL plugins in Biome v2 cannot rewrite (do not add autofix)
+  - [ ] biome: optional precision hardening as the file grows — keep excluding `<T extends ...>` type-parameter lists, JSX tags, and bit-shift (>> / >>>) contexts; GritQL pattern must continue to exclude shift operators and TS type-argument < > (current output already does) @leaf
 - [x] astgrep: fix total false-negative (was broken on every TS site)
   - [x] add TypeScript rule variants so $A > $B / $A >= $B match .ts source (rules/*-ts.yml)
   - [x] regression test: TS parser does NOT match generic type-args (Array<T>, Promise<unknown>, WeakMap<…>) — rule-tests/*-ts-test.yml
   - [x] add Tsx rule variants so .tsx (JSX + arrow-generics) is covered (rules/*-tsx.yml)
+  - [x] detection complete & correct across JS/TS/TSX; no missed sites (tri-tool review)
+  - [x] astgrep: text-template fixes are behavior-preserving (tri-tool review) — over-parenthesization (e.g. (0) < (childVNode._depth)) is the unavoidable cost of a non-branching template; always-wrap is the only safe choice, so this is acceptable
+  - [ ] astgrep: optional fix-noise reduction (non-blocking)
+    - [ ] reduce blanket parenthesization (`(curr) < (def.value)` style) — accept that astgrep CANNOT conditionally drop parens (text template cannot branch); only achievable by adding more specific atomic-operand pattern variants @leaf
+    - [x] add an explicit edge-case rule/test for chained or nested comparisons — done (commit 0f75ef5: ternary `remaining > (matched ? 1 : 0)` + chained `a > b > c`, each wrapped as a single unit)
+    - [ ] add edge-case detection rules/tests asserting >> / >>> shift operators and TS cast/generic contexts are NOT matched (guard against false positives, since the template approach is precedence-blind) @leaf
