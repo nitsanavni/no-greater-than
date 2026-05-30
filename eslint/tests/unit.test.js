@@ -57,6 +57,35 @@ test("no-greater-than (RuleTester)", () => {
         ],
       },
 
+      // --- known-pure global static calls -> safe to autofix ---
+      {
+        code: "after >= Date.parse('2024-01-01');",
+        output: "Date.parse('2024-01-01') <= after;",
+        errors: 1,
+      },
+      { code: "x > Math.max(a, b);", output: "Math.max(a, b) < x;", errors: 1 },
+      {
+        code: "x >= Number.parseInt(s);",
+        output: "Number.parseInt(s) <= x;",
+        errors: 1,
+      },
+      // --- non-deterministic / clock / spread builtins stay suggestion-only ---
+      {
+        code: "x > Math.random();",
+        output: null,
+        errors: [{ messageId: "noGreaterThan", suggestions: [{ messageId: "flip", output: "Math.random() < x;" }] }],
+      },
+      {
+        code: "x > Date.now();",
+        output: null,
+        errors: [{ messageId: "noGreaterThan", suggestions: [{ messageId: "flip", output: "Date.now() < x;" }] }],
+      },
+      {
+        code: "x > Math.max(...xs);",
+        output: null,
+        errors: [{ messageId: "noGreaterThan", suggestions: [{ messageId: "flip", output: "Math.max(...xs) < x;" }] }],
+      },
+
       // --- side effects + autofixSafeOnly:false -> autofix anyway ---
       {
         code: "foo() > b;",

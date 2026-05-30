@@ -19,6 +19,53 @@ const NEEDS_PARENS = new Set([
 ]);
 
 /**
+ * Allowlist of `Global.method` calls that are pure: deterministic and free of
+ * observable side effects, given side-effect-free arguments. Calling one and
+ * reordering it relative to the other operand cannot change observable
+ * behavior, so it is safe to autofix.
+ *
+ * Conservative on purpose. We list only standard built-ins whose static
+ * methods are spec-pure. We deliberately exclude e.g. `Math.random`
+ * (non-deterministic) and `Date.now` (clock-dependent — reordering two clock
+ * reads is observable). Membership is matched on the syntactic `Object.method`
+ * text only; if a user shadows `Math`/`Date`/etc., this rule assumes they did not.
+ */
+const PURE_STATIC_CALLS = new Set([
+  "Math.abs", "Math.ceil", "Math.floor", "Math.round", "Math.trunc",
+  "Math.sign", "Math.min", "Math.max", "Math.pow", "Math.sqrt", "Math.cbrt",
+  "Math.log", "Math.log2", "Math.log10", "Math.exp", "Math.hypot",
+  "Number.parseInt", "Number.parseFloat", "Number.isInteger",
+  "Number.isFinite", "Number.isNaN", "Number.isSafeInteger",
+  "Date.parse", "Date.UTC",
+  "String.fromCharCode", "String.fromCodePoint",
+]);
+
+/**
+ * Is `node` a call to a known-pure global static method (e.g. `Date.parse`)
+ * with side-effect-free arguments? Such calls can be safely reordered.
+ */
+function isPureStaticCall(node) {
+  if (node.type !== "CallExpression" || node.optional) return false;
+  const callee = node.callee;
+  if (
+    callee.type !== "MemberExpression" ||
+    callee.computed ||
+    callee.optional ||
+    callee.object.type !== "Identifier" ||
+    callee.property.type !== "Identifier"
+  ) {
+    return false;
+  }
+  const key = `${callee.object.name}.${callee.property.name}`;
+  if (!PURE_STATIC_CALLS.has(key)) return false;
+  // Spread args (e.g. Math.max(...xs)) could hide side effects in iteration;
+  // require plain, individually-pure arguments.
+  return node.arguments.every(
+    (arg) => arg.type !== "SpreadElement" && isSideEffectFree(arg)
+  );
+}
+
+/**
  * Is evaluating `node` guaranteed to have no observable side effects?
  * Swapping operands changes evaluation order, so we only autofix when both
  * sides are side-effect-free. Conservative: anything we're unsure about is
@@ -49,8 +96,12 @@ function isSideEffectFree(node) {
       return isSideEffectFree(node.left) && isSideEffectFree(node.right);
     case "ArrayExpression":
       return node.elements.every((el) => el == null || isSideEffectFree(el));
+    case "CallExpression":
+      // Most calls are opaque, but a small allowlist of pure global static
+      // methods (e.g. Date.parse, Math.max) is safe to reorder.
+      return isPureStaticCall(node);
     default:
-      // CallExpression, NewExpression, UpdateExpression (x++), AssignmentExpression, etc.
+      // NewExpression, UpdateExpression (x++), AssignmentExpression, etc.
       return false;
   }
 }
