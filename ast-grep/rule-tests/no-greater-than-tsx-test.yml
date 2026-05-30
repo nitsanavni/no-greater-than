@@ -1,0 +1,8 @@
+id: no-greater-than-tsx
+valid:
+  # JSX elements and arrow-generics must NOT be matched as comparisons
+  - "const el = <Foo x={1} />"
+  - "function f<T,>(x: T) { return x; }"
+  - "a < b"
+invalid:
+  - "a > b"

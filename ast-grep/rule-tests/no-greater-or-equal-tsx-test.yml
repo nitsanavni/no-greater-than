@@ -1,0 +1,5 @@
+id: no-greater-or-equal-tsx
+valid:
+  - "a <= b"
+invalid:
+  - "a >= b"

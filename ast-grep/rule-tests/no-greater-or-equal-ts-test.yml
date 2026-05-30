@@ -1,0 +1,8 @@
+id: no-greater-or-equal-ts
+valid:
+  - "const m: Map<string, number> = new Map()"
+  - "a <= b"
+  - "a > b"
+invalid:
+  - "a >= b"
+  - "count >= limit"

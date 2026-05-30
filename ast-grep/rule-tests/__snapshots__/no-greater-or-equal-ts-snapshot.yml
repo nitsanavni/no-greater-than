@@ -1,0 +1,16 @@
+id: no-greater-or-equal-ts
+snapshots:
+  a >= b:
+    fixed: (b) <= (a)
+    labels:
+    - source: a >= b
+      style: primary
+      start: 0
+      end: 6
+  count >= limit:
+    fixed: (limit) <= (count)
+    labels:
+    - source: count >= limit
+      style: primary
+      start: 0
+      end: 14

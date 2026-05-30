@@ -1,0 +1,12 @@
+id: no-greater-than-ts
+language: TypeScript
+severity: warning
+message: "Use '<' so the comparison reads like a number line."
+note: |
+  TypeScript variant. tree-sitter-typescript parses generic type arguments
+  (Array<T>, Map<K,V>) as type_arguments, NOT binary_expression, so they are
+  never matched here — only real `>` comparisons are.
+rule:
+  pattern: $A > $B
+# Always-parenthesize (see no-greater-than.yml for rationale).
+fix: ($B) < ($A)

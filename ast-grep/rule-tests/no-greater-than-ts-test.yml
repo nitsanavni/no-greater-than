@@ -1,0 +1,13 @@
+id: no-greater-than-ts
+valid:
+  # TS generics must NOT be matched as comparisons (the whole point of the TS variant)
+  - "const xs: Array<number> = []"
+  - "const m = new Map<string, number>()"
+  - "function f(): Promise<unknown> { return x; }"
+  - "const w = new WeakMap<Response, Request>()"
+  - "a < b"
+  - "a >> b"
+invalid:
+  - "a > b"
+  - "count > limit"
+  - "arr.length > 0"

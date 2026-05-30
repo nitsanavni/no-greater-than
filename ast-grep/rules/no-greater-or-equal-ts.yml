@@ -1,0 +1,7 @@
+id: no-greater-or-equal-ts
+language: TypeScript
+severity: warning
+message: "Use '<=' so the comparison reads like a number line."
+rule:
+  pattern: $A >= $B
+fix: ($B) <= ($A)

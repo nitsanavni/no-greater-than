@@ -1,0 +1,10 @@
+id: no-greater-than-tsx
+language: Tsx
+severity: warning
+message: "Use '<' so the comparison reads like a number line."
+note: |
+  TSX variant. Covers .tsx files; JSX elements (<Foo>) and generics are parsed
+  as their own node kinds, not binary_expression, so only real `>` comparisons match.
+rule:
+  pattern: $A > $B
+fix: ($B) < ($A)

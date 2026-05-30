@@ -1,0 +1,9 @@
+id: no-greater-than-tsx
+snapshots:
+  a > b:
+    fixed: (b) < (a)
+    labels:
+    - source: a > b
+      style: primary
+      start: 0
+      end: 5

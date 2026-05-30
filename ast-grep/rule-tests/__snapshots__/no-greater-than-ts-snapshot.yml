@@ -1,0 +1,23 @@
+id: no-greater-than-ts
+snapshots:
+  a > b:
+    fixed: (b) < (a)
+    labels:
+    - source: a > b
+      style: primary
+      start: 0
+      end: 5
+  arr.length > 0:
+    fixed: (0) < (arr.length)
+    labels:
+    - source: arr.length > 0
+      style: primary
+      start: 0
+      end: 14
+  count > limit:
+    fixed: (limit) < (count)
+    labels:
+    - source: count > limit
+      style: primary
+      start: 0
+      end: 13
