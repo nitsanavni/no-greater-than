@@ -2,7 +2,13 @@
   "name": "eslint-plugin-no-greater-than",
   "version": "0.1.0",
   "description": "Find > and >= comparisons and rewrite them to < / <=, so conditionals read like a number line.",
-  "keywords": ["eslint", "eslintplugin", "eslint-plugin", "number-line", "readability"],
+  "keywords": [
+    "eslint",
+    "eslintplugin",
+    "eslint-plugin",
+    "number-line",
+    "readability"
+  ],
   "license": "MIT",
   "type": "commonjs",
   "main": "index.js",
@@ -14,6 +20,8 @@
     "eslint": ">=8.0.0"
   },
   "devDependencies": {
-    "eslint": "^9.0.0"
+    "eslint": "^9.0.0",
+    "typescript": "^6.0.3",
+    "typescript-eslint": "^8.60.0"
   }
 }
