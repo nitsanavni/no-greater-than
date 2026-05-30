@@ -1,0 +1,13 @@
+id: no-greater-or-equal-ts-impure
+language: TypeScript
+severity: warning
+message: "Use '<=' so the comparison reads like a number line (manual: an operand has a side effect, so swapping would reorder evaluation)."
+note: |
+  Detect-only companion to `no-greater-or-equal-ts`. See no-greater-than-impure.yml.
+rule:
+  pattern: $A >= $B
+  has:
+    stopBy: end
+    any:
+      - kind: call_expression
+      - kind: update_expression

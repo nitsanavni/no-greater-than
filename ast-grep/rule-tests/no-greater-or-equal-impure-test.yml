@@ -1,0 +1,9 @@
+id: no-greater-or-equal-impure
+valid:
+  - "a >= b"
+  - "arr[i] >= count"
+  - "a < b"
+invalid:
+  - "foo() >= b"
+  - "a >= bar()"
+  - "i++ >= b"

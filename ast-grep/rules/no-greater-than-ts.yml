@@ -8,5 +8,14 @@ note: |
   never matched here — only real `>` comparisons are.
 rule:
   pattern: $A > $B
+  # AUTOFIX SAFETY: only fix when both operands are demonstrably pure; calls /
+  # updates are left to the detect-only `no-greater-than-ts-impure` rule. See
+  # no-greater-than.yml for the full rationale.
+  not:
+    has:
+      stopBy: end
+      any:
+        - kind: call_expression
+        - kind: update_expression
 # Always-parenthesize (see no-greater-than.yml for rationale).
 fix: ($B) < ($A)

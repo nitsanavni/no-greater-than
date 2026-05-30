@@ -7,13 +7,19 @@ valid:
   - "a !== b"
   - "a >> b"
   - "a >>> b"
+  # Operands with side effects are NOT auto-fixed here; the detect-only
+  # `no-greater-than-impure` rule reports them instead (swapping a call/update
+  # would reorder evaluation). See no-greater-than-impure-test.yml.
+  - "foo() > b"
+  - "a > bar()"
+  - "i++ > b"
+  - "(foo() || b) > c"
 invalid:
   - "a > b"
   - "x > 5"
   - "foo.bar > 10"
   - "a + 1 > b * 2"
   - "(a || b) > c"
-  - "foo() > b"
   # Edge cases: multi-token / nested / chained operands must each be wrapped
   # as a single unit so the rewrite can't mis-bind across a low-precedence
   # operator. A bare-token rewrite (no parens) would change meaning here.

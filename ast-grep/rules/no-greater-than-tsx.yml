@@ -7,4 +7,13 @@ note: |
   as their own node kinds, not binary_expression, so only real `>` comparisons match.
 rule:
   pattern: $A > $B
+  # AUTOFIX SAFETY: only fix when both operands are demonstrably pure; calls /
+  # updates are left to the detect-only `no-greater-than-tsx-impure` rule. See
+  # no-greater-than.yml for the full rationale.
+  not:
+    has:
+      stopBy: end
+      any:
+        - kind: call_expression
+        - kind: update_expression
 fix: ($B) < ($A)

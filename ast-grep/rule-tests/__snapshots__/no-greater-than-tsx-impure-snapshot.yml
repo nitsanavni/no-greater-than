@@ -1,0 +1,22 @@
+id: no-greater-than-tsx-impure
+snapshots:
+  foo() > b:
+    labels:
+    - source: foo() > b
+      style: primary
+      start: 0
+      end: 9
+    - source: foo()
+      style: secondary
+      start: 0
+      end: 5
+  i++ > b:
+    labels:
+    - source: i++ > b
+      style: primary
+      start: 0
+      end: 7
+    - source: i++
+      style: secondary
+      start: 0
+      end: 3

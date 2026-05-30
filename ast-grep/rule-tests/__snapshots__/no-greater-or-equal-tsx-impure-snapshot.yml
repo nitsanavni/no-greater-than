@@ -1,0 +1,12 @@
+id: no-greater-or-equal-tsx-impure
+snapshots:
+  foo() >= b:
+    labels:
+    - source: foo() >= b
+      style: primary
+      start: 0
+      end: 10
+    - source: foo()
+      style: secondary
+      start: 0
+      end: 5

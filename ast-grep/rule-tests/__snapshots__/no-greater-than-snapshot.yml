@@ -28,13 +28,6 @@ snapshots:
       style: primary
       start: 0
       end: 9
-  foo() > b:
-    fixed: (b) < (foo())
-    labels:
-    - source: foo() > b
-      style: primary
-      start: 0
-      end: 9
   foo.bar > 10:
     fixed: (10) < (foo.bar)
     labels:

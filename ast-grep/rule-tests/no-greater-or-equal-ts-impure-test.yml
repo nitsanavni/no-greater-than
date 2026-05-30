@@ -1,0 +1,7 @@
+id: no-greater-or-equal-ts-impure
+valid:
+  - "a >= b"
+  - "count >= limit"
+invalid:
+  - "foo() >= b"
+  - "i++ >= b"

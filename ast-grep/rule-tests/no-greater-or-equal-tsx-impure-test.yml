@@ -1,0 +1,5 @@
+id: no-greater-or-equal-tsx-impure
+valid:
+  - "a >= b"
+invalid:
+  - "foo() >= b"

@@ -1,0 +1,7 @@
+id: no-greater-than-tsx-impure
+valid:
+  - "a > b"
+  - "const el = <Foo x={1} />"
+invalid:
+  - "foo() > b"
+  - "i++ > b"

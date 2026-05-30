@@ -7,8 +7,20 @@ note: |
   only side-effect evaluation order changes (see README caveats).
 rule:
   pattern: $A > $B
+  # AUTOFIX SAFETY: the fix template swaps operand order, so it would silently
+  # reorder evaluation if an operand has a side effect. A declarative template
+  # can't sequence-guard, so we only auto-fix when BOTH operands are
+  # demonstrably pure (no call / update anywhere in either subtree). Comparisons
+  # whose operands contain a call (`foo()`) or update (`i++`) are left to the
+  # detect-only `no-greater-than-impure` rule, which reports but does not fix.
+  not:
+    has:
+      stopBy: end
+      any:
+        - kind: call_expression
+        - kind: update_expression
 # Always-parenthesize: a declarative template can't decide *when* parens are
 # needed (the way ESLint can), so it must wrap unconditionally to stay correct
 # for chained comparisons like `a > b > c`. Redundant parens are harmless and a
-# formatter will strip them. CAVEAT: this does NOT guard side effects — see README.
+# formatter will strip them.
 fix: ($B) < ($A)

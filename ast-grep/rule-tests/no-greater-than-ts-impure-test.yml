@@ -1,0 +1,9 @@
+id: no-greater-than-ts-impure
+valid:
+  - "a > b"
+  - "arr.length > 0"
+  - "const xs: Array<number> = []"
+invalid:
+  - "foo() > b"
+  - "a > bar()"
+  - "i++ > b"

@@ -1,0 +1,14 @@
+id: no-greater-than-impure
+valid:
+  # Pure operands are handled (and auto-fixed) by `no-greater-than`, not here.
+  - "a > b"
+  - "foo.bar > 10"
+  - "a + 1 > b * 2"
+  - "a < b"
+invalid:
+  # A call or update in either operand subtree -> detect-only (no fix).
+  - "foo() > b"
+  - "a > bar()"
+  - "i++ > b"
+  - "a > --b"
+  - "(foo() || b) > c"

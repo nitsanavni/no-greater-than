@@ -1,0 +1,52 @@
+id: no-greater-than-impure
+snapshots:
+  (foo() || b) > c:
+    labels:
+    - source: (foo() || b) > c
+      style: primary
+      start: 0
+      end: 16
+    - source: foo()
+      style: secondary
+      start: 1
+      end: 6
+  a > --b:
+    labels:
+    - source: a > --b
+      style: primary
+      start: 0
+      end: 7
+    - source: --b
+      style: secondary
+      start: 4
+      end: 7
+  a > bar():
+    labels:
+    - source: a > bar()
+      style: primary
+      start: 0
+      end: 9
+    - source: bar()
+      style: secondary
+      start: 4
+      end: 9
+  foo() > b:
+    labels:
+    - source: foo() > b
+      style: primary
+      start: 0
+      end: 9
+    - source: foo()
+      style: secondary
+      start: 0
+      end: 5
+  i++ > b:
+    labels:
+    - source: i++ > b
+      style: primary
+      start: 0
+      end: 7
+    - source: i++
+      style: secondary
+      start: 0
+      end: 3
