@@ -103,6 +103,33 @@ test("no-greater-than (RuleTester)", () => {
         output: "b.getFullYear() < a.getFullYear();",
         errors: 1,
       },
+      // --- pure Array/String read methods -> safe to autofix ---
+      {
+        code: "urls.indexOf(x) >= urls.length - 1;",
+        output: "(urls.length - 1) <= urls.indexOf(x);",
+        errors: 1,
+      },
+      {
+        code: "s.lastIndexOf('/') > 0;",
+        output: "0 < s.lastIndexOf('/');",
+        errors: 1,
+      },
+      { code: "arr.includes(v) > flag;", output: "flag < arr.includes(v);", errors: 1 },
+      { code: "s.charAt(0) > 'm';", output: "'m' < s.charAt(0);", errors: 1 },
+      { code: "s.slice(1) > t;", output: "t < s.slice(1);", errors: 1 },
+      // arg has side effects -> stays suggestion-only
+      {
+        code: "urls.indexOf(pop()) > 0;",
+        output: null,
+        errors: [{ messageId: "noGreaterThan", suggestions: [{ messageId: "flip", output: "0 < urls.indexOf(pop());" }] }],
+      },
+      // mutating sibling (splice) is not on the allowlist -> suggestion-only
+      {
+        code: "arr.splice(0, 1) > x;",
+        output: null,
+        errors: [{ messageId: "noGreaterThan", suggestions: [{ messageId: "flip", output: "x < arr.splice(0, 1);" }] }],
+      },
+
       // --- unknown / mutating instance methods stay suggestion-only ---
       {
         code: "d.setTime(t) > x;",

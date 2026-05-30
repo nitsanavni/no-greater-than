@@ -59,6 +59,13 @@ const PURE_INSTANCE_METHODS = new Set([
   "getUTCFullYear", "getUTCMonth", "getUTCDate", "getUTCDay",
   "getUTCHours", "getUTCMinutes", "getUTCSeconds", "getUTCMilliseconds",
   "getTimezoneOffset",
+  // Array/String read methods: each returns a value without mutating its
+  // receiver, on *every* built-in that defines the name. `indexOf`/`lastIndexOf`/
+  // `includes` are read-only searches on both Array and String; `slice` returns a
+  // copy on both (never mutates, unlike `splice`); `charAt` is String-only and
+  // pure. They accept arguments, so unlike the zero-arg Date getters their args
+  // must themselves be side-effect-free (enforced in isPureInstanceCall).
+  "indexOf", "lastIndexOf", "includes", "charAt", "slice",
 ]);
 
 /**
@@ -87,10 +94,12 @@ function isPureStaticCall(node) {
 }
 
 /**
- * Is `node` a call to a known-pure instance accessor (e.g. `a.getTime()`)?
- * The receiver must itself be side-effect-free, the method name must be on the
- * pure-accessor allowlist, and there must be no arguments (the listed getters
- * take none — args would signal a different, possibly impure, method).
+ * Is `node` a call to a known-pure instance accessor (e.g. `a.getTime()` or
+ * `urls.indexOf(x)`)? The receiver must itself be side-effect-free, the method
+ * name must be on the pure-accessor allowlist, and every argument must be
+ * side-effect-free (Date getters take none; the Array/String read methods take
+ * args, so a side-effectful arg like `urls.indexOf(pop())` stays unsafe). Spread
+ * args could hide side effects in iteration, so they're rejected too.
  */
 function isPureInstanceCall(node) {
   if (node.type !== "CallExpression" || node.optional) return false;
@@ -104,7 +113,13 @@ function isPureInstanceCall(node) {
     return false;
   }
   if (!PURE_INSTANCE_METHODS.has(callee.property.name)) return false;
-  if (node.arguments.length !== 0) return false;
+  if (
+    !node.arguments.every(
+      (arg) => arg.type !== "SpreadElement" && isSideEffectFree(arg)
+    )
+  ) {
+    return false;
+  }
   return isSideEffectFree(callee.object);
 }
 
