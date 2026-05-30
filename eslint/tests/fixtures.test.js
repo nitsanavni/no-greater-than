@@ -1,0 +1,71 @@
+"use strict";
+
+// Drives the ESLint rule from the repo-wide shared fixtures (../../fixtures/cases.json),
+// so all three implementations are exercised against the same canonical cases.
+
+const { Linter } = require("eslint");
+const { test } = require("node:test");
+const assert = require("node:assert");
+const plugin = require("../index.js");
+const cases = require("../../fixtures/cases.json");
+
+const linter = new Linter();
+const config = [
+  {
+    plugins: { ngt: plugin },
+    rules: { "ngt/no-greater-than": "error" },
+    languageOptions: { ecmaVersion: 2022, sourceType: "module" },
+  },
+];
+
+test("shouldFlag cases are detected", () => {
+  for (const c of cases.shouldFlag) {
+    const messages = linter.verify(c.code, config);
+    assert.ok(
+      messages.length >= 1,
+      `expected "${c.code}" to be flagged, got none`
+    );
+    for (const m of messages) {
+      assert.equal(m.ruleId, "ngt/no-greater-than", `unexpected rule for "${c.code}"`);
+    }
+  }
+});
+
+test("autofixable cases rewrite to the expected form", () => {
+  for (const c of cases.shouldFlag) {
+    if (!c.autofixable) continue;
+    const messages = linter.verify(c.code, config);
+    const { output, fixed } = linter.verifyAndFix(c.code, config);
+    assert.ok(fixed, `expected "${c.code}" to be autofixed`);
+    // Single-operator cases settle on exactly the documented rewrite.
+    // The nested `a > b > c` case produces multiple fixes across passes;
+    // we only assert that it gets fixed (above), not the exact final text.
+    if (messages.length === 1) {
+      assert.equal(output, c.expected, `rewrite mismatch for "${c.code}"`);
+    }
+  }
+});
+
+test("side-effect cases are flagged but NOT autofixed; a suggestion is offered", () => {
+  for (const c of cases.shouldFlag) {
+    if (c.autofixable) continue;
+    const messages = linter.verify(c.code, config);
+    assert.equal(messages.length, 1, `expected one message for "${c.code}"`);
+    const { fixed } = linter.verifyAndFix(c.code, config);
+    assert.ok(!fixed, `expected NO autofix for side-effecting "${c.code}"`);
+    const suggestions = messages[0].suggestions || [];
+    assert.equal(suggestions.length, 1, `expected one suggestion for "${c.code}"`);
+    assert.equal(
+      suggestions[0].fix.text,
+      c.expected,
+      `suggestion mismatch for "${c.code}"`
+    );
+  }
+});
+
+test("shouldNotFlag cases produce no reports", () => {
+  for (const c of cases.shouldNotFlag) {
+    const messages = linter.verify(c.code, config);
+    assert.equal(messages.length, 0, `expected "${c.code}" to be clean, got: ${JSON.stringify(messages)}`);
+  }
+});
