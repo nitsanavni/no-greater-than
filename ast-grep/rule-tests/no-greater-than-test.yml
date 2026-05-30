@@ -14,6 +14,10 @@ valid:
   - "a > bar()"
   - "i++ > b"
   - "(foo() || b) > c"
+  # Non-call side effects must also be left to the impure rule: an assignment
+  # or await operand would be silently reordered by the order-swapping fix.
+  - "(x = expr) > 0"
+  - "async () => (await p) > 0"
 invalid:
   - "a > b"
   - "x > 5"

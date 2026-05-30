@@ -5,3 +5,5 @@ valid:
 invalid:
   - "foo() > b"
   - "i++ > b"
+  - "(x = expr) > 0"
+  - "async () => (await p) > 0"

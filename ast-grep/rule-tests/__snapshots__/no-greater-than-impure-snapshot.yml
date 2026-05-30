@@ -10,6 +10,16 @@ snapshots:
       style: secondary
       start: 1
       end: 6
+  (x = expr) > 0:
+    labels:
+    - source: (x = expr) > 0
+      style: primary
+      start: 0
+      end: 14
+    - source: x = expr
+      style: secondary
+      start: 1
+      end: 9
   a > --b:
     labels:
     - source: a > --b
@@ -30,6 +40,16 @@ snapshots:
       style: secondary
       start: 4
       end: 9
+  async () => (await p) > 0:
+    labels:
+    - source: (await p) > 0
+      style: primary
+      start: 12
+      end: 25
+    - source: await p
+      style: secondary
+      start: 13
+      end: 20
   foo() > b:
     labels:
     - source: foo() > b

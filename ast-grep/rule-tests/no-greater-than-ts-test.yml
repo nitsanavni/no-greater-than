@@ -7,6 +7,9 @@ valid:
   - "const w = new WeakMap<Response, Request>()"
   - "a < b"
   - "a >> b"
+  # Assignment / await operands are left to the impure rule (would reorder).
+  - "(x = expr) > 0"
+  - "async () => (await p) > 0"
 invalid:
   - "a > b"
   - "count > limit"

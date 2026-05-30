@@ -16,4 +16,6 @@ rule:
       any:
         - kind: call_expression
         - kind: update_expression
+        - kind: assignment_expression
+        - kind: await_expression
 fix: ($B) < ($A)

@@ -4,5 +4,8 @@ valid:
   - "const el = <Foo x={1} />"
   - "function f<T,>(x: T) { return x; }"
   - "a < b"
+  # Assignment / await operands are left to the impure rule (would reorder).
+  - "(x = expr) > 0"
+  - "async () => (await p) > 0"
 invalid:
   - "a > b"

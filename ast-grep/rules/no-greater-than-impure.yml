@@ -4,8 +4,8 @@ severity: warning
 message: "Use '<' so the comparison reads like a number line (manual: an operand has a side effect, so swapping would reorder evaluation)."
 note: |
   Detect-only companion to `no-greater-than`. An operand contains a call
-  (`foo()`) or update (`i++`), so the order-swapping autofix could change
-  evaluation order. There is no `fix:` here — rewrite by hand if the reorder
+  (`foo()`), update (`i++`), assignment (`x = expr`), or await (`await p`), so
+  the order-swapping autofix could change evaluation order. There is no `fix:` here — rewrite by hand if the reorder
   is safe.
 rule:
   pattern: $A > $B
@@ -14,3 +14,5 @@ rule:
     any:
       - kind: call_expression
       - kind: update_expression
+      - kind: assignment_expression
+      - kind: await_expression

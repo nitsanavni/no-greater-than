@@ -17,5 +17,7 @@ rule:
       any:
         - kind: call_expression
         - kind: update_expression
+        - kind: assignment_expression
+        - kind: await_expression
 # Always-parenthesize (see no-greater-than.yml for rationale).
 fix: ($B) < ($A)

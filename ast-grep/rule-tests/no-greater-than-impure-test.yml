@@ -12,3 +12,6 @@ invalid:
   - "i++ > b"
   - "a > --b"
   - "(foo() || b) > c"
+  # Non-call side effects (assignment / await) are detect-only here too.
+  - "(x = expr) > 0"
+  - "async () => (await p) > 0"
