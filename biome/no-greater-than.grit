@@ -1,16 +1,22 @@
 // Biome GritQL plugin: flag `>` and `>=` comparisons.
 // GritQL plugins in Biome v2 are DETECTION-ONLY — they can report diagnostics
-// but cannot apply fixes. The intended workflow here is "flag precisely, let an
-// agent (or the ESLint rule) do the rewrite."
+// but cannot apply fixes, AND their messages cannot interpolate the matched
+// operands ($left/$right print literally). So the message teaches the rewrite
+// with a small before→better template, letting a human/agent/`eslint --fix` apply it.
 
 language js
 
 or {
-  `$left > $right`,
-  `$left >= $right`
-} where {
-  register_diagnostic(
-    span = $left,
-    message = "Use `<` / `<=` so the comparison reads like a number line (flip the operands)."
-  )
+  `$left > $right` where {
+    register_diagnostic(
+      span = $left,
+      message = "Flip it to read like a number line — before: `a > b`  →  better: `b < a`"
+    )
+  },
+  `$left >= $right` where {
+    register_diagnostic(
+      span = $left,
+      message = "Flip it to read like a number line — before: `a >= b`  →  better: `b <= a`"
+    )
+  }
 }
