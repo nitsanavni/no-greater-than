@@ -21,6 +21,13 @@ snapshots:
       style: primary
       start: 0
       end: 5
+  a > b > c:
+    fixed: (c) < (a > b)
+    labels:
+    - source: a > b > c
+      style: primary
+      start: 0
+      end: 9
   foo() > b:
     fixed: (b) < (foo())
     labels:
@@ -35,6 +42,13 @@ snapshots:
       style: primary
       start: 0
       end: 12
+  'remaining > (matched ? 1 : 0)':
+    fixed: '((matched ? 1 : 0)) < (remaining)'
+    labels:
+    - source: 'remaining > (matched ? 1 : 0)'
+      style: primary
+      start: 0
+      end: 29
   x > 5:
     fixed: (5) < (x)
     labels:

@@ -14,3 +14,8 @@ invalid:
   - "a + 1 > b * 2"
   - "(a || b) > c"
   - "foo() > b"
+  # Edge cases: multi-token / nested / chained operands must each be wrapped
+  # as a single unit so the rewrite can't mis-bind across a low-precedence
+  # operator. A bare-token rewrite (no parens) would change meaning here.
+  - "remaining > (matched ? 1 : 0)"
+  - "a > b > c"
