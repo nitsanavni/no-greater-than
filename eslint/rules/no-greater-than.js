@@ -41,6 +41,27 @@ const PURE_STATIC_CALLS = new Set([
 ]);
 
 /**
+ * Allowlist of instance-method names that are pure accessors: they read state
+ * and return a value without mutating the receiver or producing observable
+ * side effects. Matched on the property name only (we don't know the receiver's
+ * runtime type), so this is necessarily heuristic — every listed name must be a
+ * read-only accessor on *every* built-in that defines it.
+ *
+ * These are the `Date.prototype` getters: each just reads the instant the Date
+ * already holds. Reordering `a.getTime()` relative to another pure operand
+ * cannot change behavior. We deliberately exclude the `set*` mutators and
+ * anything whose same-named sibling on another built-in could mutate.
+ */
+const PURE_INSTANCE_METHODS = new Set([
+  "getTime", "valueOf",
+  "getFullYear", "getMonth", "getDate", "getDay",
+  "getHours", "getMinutes", "getSeconds", "getMilliseconds",
+  "getUTCFullYear", "getUTCMonth", "getUTCDate", "getUTCDay",
+  "getUTCHours", "getUTCMinutes", "getUTCSeconds", "getUTCMilliseconds",
+  "getTimezoneOffset",
+]);
+
+/**
  * Is `node` a call to a known-pure global static method (e.g. `Date.parse`)
  * with side-effect-free arguments? Such calls can be safely reordered.
  */
@@ -63,6 +84,28 @@ function isPureStaticCall(node) {
   return node.arguments.every(
     (arg) => arg.type !== "SpreadElement" && isSideEffectFree(arg)
   );
+}
+
+/**
+ * Is `node` a call to a known-pure instance accessor (e.g. `a.getTime()`)?
+ * The receiver must itself be side-effect-free, the method name must be on the
+ * pure-accessor allowlist, and there must be no arguments (the listed getters
+ * take none — args would signal a different, possibly impure, method).
+ */
+function isPureInstanceCall(node) {
+  if (node.type !== "CallExpression" || node.optional) return false;
+  const callee = node.callee;
+  if (
+    callee.type !== "MemberExpression" ||
+    callee.computed ||
+    callee.optional ||
+    callee.property.type !== "Identifier"
+  ) {
+    return false;
+  }
+  if (!PURE_INSTANCE_METHODS.has(callee.property.name)) return false;
+  if (node.arguments.length !== 0) return false;
+  return isSideEffectFree(callee.object);
 }
 
 /**
@@ -97,9 +140,10 @@ function isSideEffectFree(node) {
     case "ArrayExpression":
       return node.elements.every((el) => el == null || isSideEffectFree(el));
     case "CallExpression":
-      // Most calls are opaque, but a small allowlist of pure global static
-      // methods (e.g. Date.parse, Math.max) is safe to reorder.
-      return isPureStaticCall(node);
+      // Most calls are opaque, but small allowlists of pure global static
+      // methods (e.g. Date.parse, Math.max) and pure instance accessors
+      // (e.g. a.getTime()) are safe to reorder.
+      return isPureStaticCall(node) || isPureInstanceCall(node);
     default:
       // NewExpression, UpdateExpression (x++), AssignmentExpression, etc.
       return false;

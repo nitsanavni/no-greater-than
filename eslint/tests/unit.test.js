@@ -86,6 +86,41 @@ test("no-greater-than (RuleTester)", () => {
         errors: [{ messageId: "noGreaterThan", suggestions: [{ messageId: "flip", output: "Math.max(...xs) < x;" }] }],
       },
 
+      // --- known-pure instance accessors -> safe to autofix ---
+      {
+        code: "a.getTime() >= b.getTime();",
+        output: "b.getTime() <= a.getTime();",
+        errors: 1,
+      },
+      {
+        code: "_date.getTime() >= startOfNextYear.getTime();",
+        output: "startOfNextYear.getTime() <= _date.getTime();",
+        errors: 1,
+      },
+      { code: "d.valueOf() > 0;", output: "0 < d.valueOf();", errors: 1 },
+      {
+        code: "a.getFullYear() > b.getFullYear();",
+        output: "b.getFullYear() < a.getFullYear();",
+        errors: 1,
+      },
+      // --- unknown / mutating instance methods stay suggestion-only ---
+      {
+        code: "d.setTime(t) > x;",
+        output: null,
+        errors: [{ messageId: "noGreaterThan", suggestions: [{ messageId: "flip", output: "x < d.setTime(t);" }] }],
+      },
+      {
+        code: "obj.compute() > x;",
+        output: null,
+        errors: [{ messageId: "noGreaterThan", suggestions: [{ messageId: "flip", output: "x < obj.compute();" }] }],
+      },
+      // receiver itself has side effects -> not safe even with pure accessor name
+      {
+        code: "make().getTime() > x;",
+        output: null,
+        errors: [{ messageId: "noGreaterThan", suggestions: [{ messageId: "flip", output: "x < make().getTime();" }] }],
+      },
+
       // --- side effects + autofixSafeOnly:false -> autofix anyway ---
       {
         code: "foo() > b;",
