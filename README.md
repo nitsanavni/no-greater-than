@@ -45,6 +45,9 @@ How well each framework can express those two guards is the whole point of this 
 [`fixtures/`](fixtures/) holds one set of example cases that all three implementations are run
 against, so we can compare what each flags and fixes apples-to-apples.
 
+See [`EXAMPLES.md`](EXAMPLES.md) for a **before → better** table generated from those same cases
+(`node scripts/gen-examples.mjs`) — one source of truth for tests *and* docs.
+
 ## Status
 
 Exploratory. See per-implementation READMEs for how to run each, and
