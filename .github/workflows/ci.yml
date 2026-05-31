@@ -23,12 +23,19 @@ jobs:
       - name: ast-grep rule tests
         run: cd ast-grep && ast-grep test
 
-      - name: biome lint flags the expected 12 sites
+      - name: biome flags the expected sites (operators + ranges)
         run: |
-          count=$(npx --yes @biomejs/biome lint --config-path biome/biome.json fixtures/sample.js 2>&1 | grep -c 'better:' || true)
-          echo "biome flagged $count sites"
-          if [ "$count" -ne 12 ]; then
-            echo "Expected biome to flag 12 sites, got $count" >&2
+          out=$(npx --yes @biomejs/biome lint --config-path biome/biome.json fixtures/sample.js 2>&1 || true)
+          ops=$(printf '%s' "$out" | grep -c 'Flip it')
+          ranges=$(printf '%s' "$out" | grep -c 'Order this range')
+          echo "biome flagged $ops operator sites and $ranges range sites"
+          # no-greater-than.grit -> 12 operator diagnostics; number-line-range.grit -> >=1 scrambled range
+          if [ "$ops" -ne 12 ]; then
+            echo "Expected 12 operator diagnostics (Flip it), got $ops" >&2
+            exit 1
+          fi
+          if [ "$ranges" -lt 1 ]; then
+            echo "Expected >=1 range diagnostic (Order this range), got $ranges" >&2
             exit 1
           fi
 
