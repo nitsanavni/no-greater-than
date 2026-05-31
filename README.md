@@ -56,6 +56,8 @@ See [`EXAMPLES.md`](EXAMPLES.md) for a **before → better** table generated fro
 
 ## Status
 
+To install & run any of the three from this public repo (no npm publish), see [`CONSUMING.md`](CONSUMING.md).
+
 Exploratory. See per-implementation READMEs for how to run each, and
 [`COMPARISON.md`](COMPARISON.md) for the running write-up.
 
