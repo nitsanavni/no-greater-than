@@ -1,0 +1,18 @@
+id: number-line-range-ts-impure
+valid:
+  # Pure ranges are handled (and auto-fixed) by `number-line-range-ts`.
+  - "x > 5 && x < 10"
+  - "x < 10 && x > 5"
+  - "5 < x && x < 10"
+  # Not a two-sided range at all.
+  - "a < b && c < d"
+  # LIMITATION: a side effect on the SHARED $X operand is NOT matched at all
+  # (the metavar must bind identically on both sides). See
+  # number-line-range-impure-test.yml for the full explanation.
+  - "x++ > 5 && x < 10"
+invalid:
+  # A side effect in a BOUND operand ($LO / $HI) still matches the range
+  # pattern, so it is reported detect-only (no fix) here.
+  - "f() > 5 && f() < 10"
+  - "x > 5 && x < f()"
+  - "x > f() && x < 10"

@@ -1,0 +1,23 @@
+id: number-line-range-or
+snapshots:
+  a < lo || a > hi:
+    fixed: (a) < (lo) || (hi) < (a)
+    labels:
+    - source: a < lo || a > hi
+      style: primary
+      start: 0
+      end: 16
+  x < 5 || x > 10:
+    fixed: (x) < (5) || (10) < (x)
+    labels:
+    - source: x < 5 || x > 10
+      style: primary
+      start: 0
+      end: 15
+  x > 10 || x < 5:
+    fixed: (x) < (5) || (10) < (x)
+    labels:
+    - source: x > 10 || x < 5
+      style: primary
+      start: 0
+      end: 15

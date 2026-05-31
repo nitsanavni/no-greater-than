@@ -1,0 +1,17 @@
+id: number-line-range-or-ts-impure
+valid:
+  # Pure outside-ranges are handled (and auto-fixed) by `number-line-range-or-ts`.
+  - "x < 5 || x > 10"
+  - "x > 10 || x < 5"
+  - "x < 5 || 10 < x"
+  # Not a two-sided outside-range at all.
+  - "a < b || c < d"
+  # LIMITATION: a side effect on the SHARED $X operand is NOT matched at all.
+  # See number-line-range-impure-test.yml for the full explanation.
+  - "x++ < 5 || x > 10"
+invalid:
+  # A side effect in a BOUND operand ($LO / $HI) still matches, so it is
+  # reported detect-only (no fix) here.
+  - "f() < 5 || f() > 10"
+  - "x < 5 || x > f()"
+  - "x < f() || x > 10"
