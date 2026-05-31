@@ -52,3 +52,5 @@ See [`EXAMPLES.md`](EXAMPLES.md) for a **before → better** table generated fro
 
 Exploratory. See per-implementation READMEs for how to run each, and
 [`COMPARISON.md`](COMPARISON.md) for the running write-up.
+
+Project concerns + Mikado graph tracked in [`internal-docs/`](internal-docs/).
