@@ -1,0 +1,18 @@
+id: number-line-range-or-loincl
+valid:
+  # Already canonical: left alone.
+  - "x <= 5 || 10 < x"
+  - "x <= lo || hi < x"
+  # Not a two-sided range over a single variable.
+  - "a < b && c < d"
+  - "x > 5 && x < 10"
+  - "x < 5 || y > 10"
+  # Side-effecting operands are NOT auto-fixed here; the detect-only
+  # `number-line-range-or-loincl-impure` rule reports them instead.
+  - "f() <= 5 || f() > 10"
+  - "x <= 5 || x > f()"
+invalid:
+  # Both scrambled permutations -> canonical `x <= lo || hi < x`.
+  - "x <= 5 || x > 10"
+  - "x > 10 || x <= 5"
+  - "a <= lo || a > hi"

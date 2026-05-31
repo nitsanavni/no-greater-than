@@ -1,0 +1,32 @@
+id: number-line-range-or-loincl
+language: JavaScript
+severity: warning
+message: "Order as a number line: x <= lo || hi < x."
+note: |
+  Inclusive / half-open variant of the number-line range rules. Both scrambled
+  orderings below carry the same boolean and map to the SAME canonical output,
+  so a single non-branching fix template covers them. Each operator keeps its
+  strict (`<`/`>`) or inclusive (`<=`/`>=`) form across the rewrite.
+
+  COVERAGE (fix):
+    - `$X <= $LO || $X > $HI`  ->  `($X) <= ($LO) || ($HI) < ($X)`
+    - `$X > $HI || $X <= $LO`  ->  `($X) <= ($LO) || ($HI) < ($X)`
+rule:
+  any:
+    - pattern: $X <= $LO || $X > $HI
+    - pattern: $X > $HI || $X <= $LO
+  # AUTOFIX SAFETY: the fix reorders operands, so it would silently change
+  # evaluation order if any operand has a side effect. We only auto-fix when the
+  # whole expression is demonstrably pure (no call / update / assignment / await
+  # anywhere). Side-effecting bounds are left to the detect-only
+  # `number-line-range-or-loincl-impure` rule.
+  not:
+    has:
+      stopBy: end
+      any:
+      - kind: call_expression
+      - kind: update_expression
+      - kind: assignment_expression
+      - kind: await_expression
+# Always-parenthesize each operand (see no-greater-than.yml for rationale).
+fix: ($X) <= ($LO) || ($HI) < ($X)

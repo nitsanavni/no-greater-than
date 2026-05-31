@@ -1,0 +1,25 @@
+id: number-line-range-incl-ts-impure
+language: TypeScript
+severity: warning
+message: "Order as a number line: lo <= x && x <= hi (manual: an operand has a side effect, so reordering would change evaluation order)."
+note: |
+  Detect-only companion to `number-line-range-incl-ts`. An operand contains a call (`foo()`),
+  update (`i++`), assignment (`x = expr`), or await (`await p`), so the
+  operand-reordering autofix could change evaluation order. There is no `fix:`
+  here — rewrite by hand if the reorder is safe.
+
+  SCOPE: this rule only fires when the side effect is in a BOUND operand. A
+  side effect on the shared `$X` operand makes the two `$X` occurrences bind to
+  different text, so the range pattern fails to match entirely — a known gap of
+  declarative metavar matching.
+rule:
+  any:
+    - pattern: $X >= $LO && $X <= $HI
+    - pattern: $X <= $HI && $X >= $LO
+  has:
+    stopBy: end
+    any:
+      - kind: call_expression
+      - kind: update_expression
+      - kind: assignment_expression
+      - kind: await_expression

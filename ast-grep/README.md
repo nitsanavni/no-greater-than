@@ -8,8 +8,10 @@ A grep/lint/codemod hybrid (tree-sitter, Rust). The whole rule is a few lines of
 
 - `rules/no-greater-than{,-ts,-tsx}.yml` — `$A > $B` → `($B) < ($A)` for JS / TS / TSX
 - `rules/no-greater-or-equal{,-ts,-tsx}.yml` — `$A >= $B` → `($B) <= ($A)` for JS / TS / TSX
-- `rules/number-line-range{,-ts,-tsx}.yml` — two-sided **between** range → `($LO) < ($X) && ($X) < ($HI)` for JS / TS / TSX
-- `rules/number-line-range-or{,-ts,-tsx}.yml` — two-sided **outside** range → `($X) < ($LO) || ($HI) < ($X)` for JS / TS / TSX
+- `rules/number-line-range{,-ts,-tsx}.yml` — two-sided **between** range (strict) → `($LO) < ($X) && ($X) < ($HI)` for JS / TS / TSX
+- `rules/number-line-range-{incl,loincl,hiincl}{,-ts,-tsx}.yml` — **between** range, inclusive (`<=`/`>=`) and half-open (mixed) variants
+- `rules/number-line-range-or{,-ts,-tsx}.yml` — two-sided **outside** range (strict) → `($X) < ($LO) || ($HI) < ($X)` for JS / TS / TSX
+- `rules/number-line-range-or-{incl,loincl,hiincl}{,-ts,-tsx}.yml` — **outside** range, inclusive and half-open variants
 - `rules/number-line-range*-impure.yml` — detect-only companions for ranges whose **bound** operand has a side effect
 - `sgconfig.yml` — points ast-grep at `rules/` and the test dir
 - `rule-tests/` — `ast-grep test` cases + snapshots
@@ -64,16 +66,29 @@ normalise the scrambled orderings to a canonical form:
 
 Because an ast-grep fix is a single non-branching template, a permutation is
 only auto-fixed when every scrambled form maps to the **same** canonical
-output. Both `&&` permutations do (both → `($LO) < ($X) && ($X) < ($HI)`), and
-both `||` permutations do (both → `($X) < ($LO) || ($HI) < ($X)`), so all four
-are covered by a correct fix:
+output. Each operator keeps its strict (`<`/`>`) or inclusive (`<=`/`>=`) form
+across the rewrite, so the inclusive and half-open variants get their own rules
+(one per operator combination) — the two orderings within each rule still
+collapse to a single canonical output, so each is a clean fix. All are covered:
 
 | Pattern | Rule | Status |
 | --- | --- | --- |
-| `$X > $LO && $X < $HI` | `number-line-range` | **fix** |
+| `$X > $LO && $X < $HI` | `number-line-range` | **fix** → `($LO) < ($X) && ($X) < ($HI)` |
 | `$X < $HI && $X > $LO` | `number-line-range` | **fix** |
-| `$X < $LO \|\| $X > $HI` | `number-line-range-or` | **fix** |
+| `$X >= $LO && $X <= $HI` | `number-line-range-incl` | **fix** → `($LO) <= ($X) && ($X) <= ($HI)` |
+| `$X <= $HI && $X >= $LO` | `number-line-range-incl` | **fix** |
+| `$X >= $LO && $X < $HI` | `number-line-range-loincl` | **fix** → `($LO) <= ($X) && ($X) < ($HI)` (half-open) |
+| `$X < $HI && $X >= $LO` | `number-line-range-loincl` | **fix** |
+| `$X > $LO && $X <= $HI` | `number-line-range-hiincl` | **fix** → `($LO) < ($X) && ($X) <= ($HI)` (half-open) |
+| `$X <= $HI && $X > $LO` | `number-line-range-hiincl` | **fix** |
+| `$X < $LO \|\| $X > $HI` | `number-line-range-or` | **fix** → `($X) < ($LO) \|\| ($HI) < ($X)` |
 | `$X > $HI \|\| $X < $LO` | `number-line-range-or` | **fix** |
+| `$X <= $LO \|\| $X >= $HI` | `number-line-range-or-incl` | **fix** → `($X) <= ($LO) \|\| ($HI) <= ($X)` |
+| `$X >= $HI \|\| $X <= $LO` | `number-line-range-or-incl` | **fix** |
+| `$X <= $LO \|\| $X > $HI` | `number-line-range-or-loincl` | **fix** → `($X) <= ($LO) \|\| ($HI) < ($X)` |
+| `$X > $HI \|\| $X <= $LO` | `number-line-range-or-loincl` | **fix** |
+| `$X < $LO \|\| $X >= $HI` | `number-line-range-or-hiincl` | **fix** → `($X) < ($LO) \|\| ($HI) <= ($X)` |
+| `$X >= $HI \|\| $X < $LO` | `number-line-range-or-hiincl` | **fix** |
 | any of the above with a side-effecting **bound** | `number-line-range*-impure` | **detect-only** (no fix) |
 
 The same side-effect guard as `no-greater-than` applies: when a **bound**

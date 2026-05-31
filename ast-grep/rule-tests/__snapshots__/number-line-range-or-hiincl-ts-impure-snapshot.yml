@@ -1,0 +1,32 @@
+id: number-line-range-or-hiincl-ts-impure
+snapshots:
+  f() < 5 || f() >= 10:
+    labels:
+    - source: f() < 5 || f() >= 10
+      style: primary
+      start: 0
+      end: 20
+    - source: f()
+      style: secondary
+      start: 0
+      end: 3
+  x < 5 || x >= f():
+    labels:
+    - source: x < 5 || x >= f()
+      style: primary
+      start: 0
+      end: 17
+    - source: f()
+      style: secondary
+      start: 14
+      end: 17
+  x < f() || x >= 10:
+    labels:
+    - source: x < f() || x >= 10
+      style: primary
+      start: 0
+      end: 18
+    - source: f()
+      style: secondary
+      start: 4
+      end: 7

@@ -1,0 +1,14 @@
+id: number-line-range-or-hiincl-tsx-impure
+valid:
+  # Pure ranges are handled (and auto-fixed) by `number-line-range-or-hiincl-tsx`, not here.
+  - "x < 5 || x >= 10"
+  - "x >= 10 || x < 5"
+  - "a < lo || a >= hi"
+  - "x < 5 || 10 <= x"
+  # Not a two-sided range at all.
+  - "a < b && c < d"
+invalid:
+  # A side effect in a BOUND operand still matches, so reported detect-only.
+  - "f() < 5 || f() >= 10"
+  - "x < 5 || x >= f()"
+  - "x < f() || x >= 10"
