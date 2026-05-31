@@ -34,3 +34,21 @@
 | `a >> b` | right shift, not greater-than |
 | `a >>> b` | unsigned right shift |
 | `a >>= b` | shift-assign |
+
+## Ranges — order like a number line
+
+| Before | Better | Auto-fixed? | Note |
+| --- | --- | --- | --- |
+| `x > 5 && x < 10` | `5 < x && x < 10` | yes | between range → ascending number line |
+| `x < 10 && x > 5` | `5 < x && x < 10` | yes | reordered so bounds read ascending |
+| `x >= 5 && x <= 10` | `5 <= x && x <= 10` | yes | inclusive bounds |
+| `x < 5 \|\| x > 10` | `x < 5 \|\| 10 < x` | yes | outside range |
+| `x > 10 \|\| x < 5` | `x < 5 \|\| 10 < x` | yes | outside, reordered |
+| `f() > 5 && f() < 10` | `5 < f() && f() < 10` | suggestion only | shared operand has side effects → suggestion only (eslint); ast-grep can't match a repeated side-effecting operand |
+
+## Ranges already in number-line order (not flagged)
+
+| Code | Why |
+| --- | --- |
+| `5 < x && x < 10` | canonical between — already number-line order |
+| `x < 5 \|\| 10 < x` | canonical outside — already number-line order |

@@ -83,5 +83,17 @@
     { "code": "a >> b", "note": "right shift, not greater-than" },
     { "code": "a >>> b", "note": "unsigned right shift" },
     { "code": "a >>= b", "note": "shift-assign" }
+  ],
+  "ranges": [
+    {"code":"x > 5 && x < 10","expected":"5 < x && x < 10","autofixable":true,"note":"between range → ascending number line"},
+    {"code":"x < 10 && x > 5","expected":"5 < x && x < 10","autofixable":true,"note":"reordered so bounds read ascending"},
+    {"code":"x >= 5 && x <= 10","expected":"5 <= x && x <= 10","autofixable":true,"note":"inclusive bounds"},
+    {"code":"x < 5 || x > 10","expected":"x < 5 || 10 < x","autofixable":true,"note":"outside range"},
+    {"code":"x > 10 || x < 5","expected":"x < 5 || 10 < x","autofixable":true,"note":"outside, reordered"},
+    {"code":"f() > 5 && f() < 10","expected":"5 < f() && f() < 10","autofixable":false,"note":"shared operand has side effects → suggestion only (eslint); ast-grep can't match a repeated side-effecting operand"}
+  ],
+  "rangesOk": [
+    {"code":"5 < x && x < 10","note":"canonical between — already number-line order"},
+    {"code":"x < 5 || 10 < x","note":"canonical outside — already number-line order"}
   ]
 }

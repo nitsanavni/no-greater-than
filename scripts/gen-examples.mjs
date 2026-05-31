@@ -43,8 +43,33 @@ for (const c of cases.shouldNotFlag) {
   lines.push(`| ${esc(c.code)} | ${c.note || ""} |`);
 }
 
+lines.push(
+  "",
+  "## Ranges — order like a number line",
+  "",
+  "| Before | Better | Auto-fixed? | Note |",
+  "| --- | --- | --- | --- |"
+);
+
+for (const c of cases.ranges) {
+  const auto = c.autofixable ? "yes" : "suggestion only";
+  lines.push(`| ${esc(c.code)} | ${esc(c.expected)} | ${auto} | ${c.note || ""} |`);
+}
+
+lines.push(
+  "",
+  "## Ranges already in number-line order (not flagged)",
+  "",
+  "| Code | Why |",
+  "| --- | --- |"
+);
+
+for (const c of cases.rangesOk) {
+  lines.push(`| ${esc(c.code)} | ${c.note || ""} |`);
+}
+
 lines.push("");
 writeFileSync(join(root, "EXAMPLES.md"), lines.join("\n"));
 console.log(
-  `EXAMPLES.md generated: ${cases.shouldFlag.length} flagged + ${cases.shouldNotFlag.length} not-flagged cases.`
+  `EXAMPLES.md generated: ${cases.shouldFlag.length} flagged + ${cases.shouldNotFlag.length} not-flagged + ${cases.ranges.length} range + ${cases.rangesOk.length} range-ok cases.`
 );
