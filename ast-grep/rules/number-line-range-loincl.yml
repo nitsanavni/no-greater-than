@@ -11,10 +11,19 @@ note: |
   COVERAGE (fix):
     - `$X >= $LO && $X < $HI`  ->  `($LO) <= ($X) && ($X) < ($HI)`
     - `$X < $HI && $X >= $LO`  ->  `($LO) <= ($X) && ($X) < ($HI)`
+    - `$LO <= $X && $HI > $X`  ->  `($LO) <= ($X) && ($X) < ($HI)`
+    - `$HI > $X && $LO <= $X`  ->  `($LO) <= ($X) && ($X) < ($HI)`
+
+  The last two cover the case where the lower bound is already canonical
+  (`lo <= x`) but the upper-bound clause keeps the variable on the wrong side
+  (`hi > x` instead of `x < hi`). eslint's number-line-range rule folds these
+  into the same canonical range, so ast-grep must too; the fix is identical.
 rule:
   any:
     - pattern: $X >= $LO && $X < $HI
     - pattern: $X < $HI && $X >= $LO
+    - pattern: $LO <= $X && $HI > $X
+    - pattern: $HI > $X && $LO <= $X
   # AUTOFIX SAFETY: the fix reorders operands, so it would silently change
   # evaluation order if any operand has a side effect. We only auto-fix when the
   # whole expression is demonstrably pure (no call / update / assignment / await

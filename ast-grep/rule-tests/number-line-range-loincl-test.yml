@@ -16,3 +16,9 @@ invalid:
   - "x >= 5 && x < 10"
   - "x < 10 && x >= 5"
   - "a >= lo && a < hi"
+  # Lower bound already canonical (`lo <= x`) but the upper-bound clause has the
+  # variable on the wrong side (`hi > x` instead of `x < hi`). eslint folds
+  # these into the same `lo <= x && x < hi` range; ast-grep must too.
+  - "5 <= x && 10 > x"
+  - "10 > x && 5 <= x"
+  - "0 <= i && source.length > i"

@@ -1,5 +1,26 @@
 id: number-line-range-loincl
 snapshots:
+  0 <= i && source.length > i:
+    fixed: (0) <= (i) && (i) < (source.length)
+    labels:
+    - source: 0 <= i && source.length > i
+      style: primary
+      start: 0
+      end: 27
+  10 > x && 5 <= x:
+    fixed: (5) <= (x) && (x) < (10)
+    labels:
+    - source: 10 > x && 5 <= x
+      style: primary
+      start: 0
+      end: 16
+  5 <= x && 10 > x:
+    fixed: (5) <= (x) && (x) < (10)
+    labels:
+    - source: 5 <= x && 10 > x
+      style: primary
+      start: 0
+      end: 16
   a >= lo && a < hi:
     fixed: (lo) <= (a) && (a) < (hi)
     labels:
