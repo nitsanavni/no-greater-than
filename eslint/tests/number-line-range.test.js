@@ -25,6 +25,14 @@ ruleTester.run("number-line-range", rule, {
       "x < 5 && x < 10;",
       // not relational binary expressions
       "a && b;",
+      // BUG 1 (false positive): the only shared operand is a *literal* (0),
+      // not a real variable. `start`/`end` are distinct, so this is NOT a range.
+      "start > 0 || end < 0;",
+      "a > 1 && b < 10;",
+      // shared literal across distinct variables must not pose as the variable
+      "p < 0 && q > 0;",
+      // a buried range that is already in canonical order -> nothing to fix
+      "a && lo < x && x < hi;",
     ],
     invalid: [
       // --- between (&&): canonical is lo < x && x < hi ---
@@ -83,6 +91,29 @@ ruleTester.run("number-line-range", rule, {
         code: "f() > 5 && f() < 10;",
         options: [{ autofixSafeOnly: false }],
         output: "5 < f() && f() < 10;",
+        errors: [{ messageId: "range" }],
+      },
+      // --- BUG 2 (false negative): range buried in a longer && chain ---
+      // `a && lo <= x && x <= hi` parses as `(a && lo<=x) && x<=hi`; the two
+      // halves are not children of one node. Reorder the pair in place,
+      // preserving the other conjunct.
+      {
+        code: "a && x <= hi && lo <= x;",
+        output: "a && lo <= x && x <= hi;",
+        errors: [{ messageId: "range" }],
+      },
+      // halves split across an unrelated conjunct `mid`; reorder lo/hi into
+      // canonical slots (lower bound at the earlier slot, upper at the later),
+      // leaving `mid` untouched.
+      {
+        code: "x < hi && mid && lo < x;",
+        output: "lo < x && mid && x < hi;",
+        errors: [{ messageId: "range" }],
+      },
+      // outside range buried in an || chain
+      {
+        code: "a || x > hi || x < lo;",
+        output: "a || x < lo || hi < x;",
         errors: [{ messageId: "range" }],
       },
     ],

@@ -32,12 +32,58 @@ function classify(cmp, S, sourceCode) {
   return { side, op, boundNode, varNode };
 }
 
-/** The one operand text common to both comparisons (the variable), or null. */
+/**
+ * Is `node` an operand that can legitimately be the *variable* of a range?
+ * A range bounds a value against two limits; the value must be a real
+ * expression (identifier, member access, `this`, a call, ...), never a bare
+ * literal. BUG 1: when the only operand shared by the two halves is a literal
+ * (e.g. `0` in `start > 0 || end < 0`), the old code mistook that literal for
+ * the variable and produced a false positive. A literal is never the variable.
+ */
+function isVariableLike(node) {
+  return node.type !== "Literal";
+}
+
+/**
+ * Among the operands of one comparison, the texts that may stand for the
+ * bounded variable — i.e. excluding bare literals.
+ */
+function variableTexts(cmp, sourceCode) {
+  const out = [];
+  if (isVariableLike(cmp.left)) out.push(sourceCode.getText(cmp.left));
+  if (isVariableLike(cmp.right)) out.push(sourceCode.getText(cmp.right));
+  return out;
+}
+
+/**
+ * The one *variable* operand text common to both comparisons, or null.
+ * Literals are excluded so a literal appearing on both sides can never be
+ * mistaken for the variable (BUG 1).
+ */
 function sharedOperand(a, b, sourceCode) {
-  const aTexts = [sourceCode.getText(a.left), sourceCode.getText(a.right)];
-  const bTexts = [sourceCode.getText(b.left), sourceCode.getText(b.right)];
+  const aTexts = variableTexts(a, sourceCode);
+  const bTexts = variableTexts(b, sourceCode);
   const common = [...new Set(aTexts.filter((t) => bTexts.includes(t)))];
   return common.length === 1 ? common[0] : null;
+}
+
+/**
+ * Flatten a left-associative `&&`/`||` chain rooted at `node` into its full
+ * list of operands. `a && b && c` parses as `(a && b) && c`, so without this
+ * the two halves of a range can land in different LogicalExpression nodes
+ * (BUG 2). Only descends through nodes whose operator matches `op`.
+ */
+function flattenChain(node, op) {
+  const out = [];
+  (function walk(n) {
+    if (n.type === "LogicalExpression" && n.operator === op) {
+      walk(n.left);
+      walk(n.right);
+    } else {
+      out.push(n);
+    }
+  })(node);
+  return out;
 }
 
 /** @type {import('eslint').Rule.RuleModule} */
@@ -74,49 +120,91 @@ module.exports = {
     const options = context.options[0] || {};
     const autofixSafeOnly = options.autofixSafeOnly !== false; // default true
 
+    /**
+     * Find a lo/hi range pair among the operands of one flattened chain.
+     * Returns { i, j, less, greater } with i < j (the chain indices of the two
+     * range halves), or null. Each `less`/`greater` is the `classify` result.
+     */
+    function findRangePair(ops) {
+      // Pre-classify candidates: relational comparisons keyed by their
+      // variable text. A pair is a range iff the two halves share one variable
+      // and sit on opposite sides (one `less`, one `greater`).
+      const rels = ops.map((n, idx) =>
+        n.type === "BinaryExpression" && REL.has(n.operator) ? idx : -1
+      );
+      for (let a = 0; a < ops.length; a++) {
+        if (rels[a] !== a) continue;
+        for (let b = a + 1; b < ops.length; b++) {
+          if (rels[b] !== b) continue;
+          const S = sharedOperand(ops[a], ops[b], sourceCode);
+          if (!S) continue;
+          const ca = classify(ops[a], S, sourceCode);
+          const cb = classify(ops[b], S, sourceCode);
+          if (!ca || !cb) continue;
+          if (ca.side === "less" && cb.side === "greater") {
+            return { i: a, j: b, less: ca, greater: cb };
+          }
+          if (ca.side === "greater" && cb.side === "less") {
+            return { i: a, j: b, less: cb, greater: ca };
+          }
+          // both-less / both-greater: not a range; keep scanning.
+        }
+      }
+      return null;
+    }
+
     function check(node) {
       if (node.operator !== "&&" && node.operator !== "||") return;
-      const { left, right } = node;
-      if (left.type !== "BinaryExpression" || right.type !== "BinaryExpression") return;
-      if (!REL.has(left.operator) || !REL.has(right.operator)) return;
-
-      const S = sharedOperand(left, right, sourceCode);
-      if (!S) return;
-      const cl = classify(left, S, sourceCode);
-      const cr = classify(right, S, sourceCode);
-      if (!cl || !cr) return;
-
-      // A real range needs exactly one lower bound and one upper bound.
-      let less, greater;
-      if (cl.side === "less" && cr.side === "greater") {
-        less = cl;
-        greater = cr;
-      } else if (cl.side === "greater" && cr.side === "less") {
-        less = cr;
-        greater = cl;
-      } else {
-        return; // both-less / both-greater: not a number-line range
+      // Only inspect a chain from its top: skip nodes whose parent is the same
+      // logical operator (they are interior links of one flattened chain).
+      if (
+        node.parent &&
+        node.parent.type === "LogicalExpression" &&
+        node.parent.operator === node.operator
+      ) {
+        return;
       }
+
+      const ops = flattenChain(node, node.operator);
+      const pair = findRangePair(ops);
+      if (!pair) return;
+      const { i, j, less, greater } = pair;
 
       const x = operandText(less.varNode, sourceCode);
       const lessBound = operandText(less.boundNode, sourceCode); // x < hi  -> hi
       const greaterBound = operandText(greater.boundNode, sourceCode); // x > lo -> lo
 
-      let rewrite;
+      // Canonical renderings of the two halves. For `&&` (between) the lower
+      // bound reads `lo < x` and the upper `x < hi`; for `||` (outside) they
+      // read `x < lo` and `hi < x`. We place the lower-bound half at the
+      // earlier chain slot (i) and the upper-bound half at the later slot (j),
+      // preserving every other conjunct in its original position.
+      let loSlot, hiSlot;
       if (node.operator === "&&") {
-        // between: lo < x && x < hi  (variable in the middle, bounds ascending)
-        rewrite = `${greaterBound} ${flipOp(greater.op)} ${x} && ${x} ${less.op} ${lessBound}`;
+        loSlot = `${greaterBound} ${flipOp(greater.op)} ${x}`; // lo < x
+        hiSlot = `${x} ${less.op} ${lessBound}`; // x < hi
       } else {
-        // outside: x < lo || hi < x  (variable on the outer edges)
-        rewrite = `${x} ${less.op} ${lessBound} || ${greaterBound} ${flipOp(greater.op)} ${x}`;
+        loSlot = `${x} ${less.op} ${lessBound}`; // x < lo
+        hiSlot = `${greaterBound} ${flipOp(greater.op)} ${x}`; // hi < x
       }
+
+      const parts = ops.map((n) => operandText(n, sourceCode));
+      parts[i] = loSlot;
+      parts[j] = hiSlot;
+      const rewrite = parts.join(` ${node.operator} `);
 
       if (rewrite === sourceCode.getText(node)) return; // already canonical
 
-      const safe =
+      // Safe to autofix only when nothing observable can change. Besides the
+      // range operands, reordering the two halves moves them relative to every
+      // conjunct *between* slots i and j, so those must be side-effect-free too.
+      let safe =
         isSideEffectFree(less.varNode) &&
         isSideEffectFree(less.boundNode) &&
         isSideEffectFree(greater.boundNode);
+      for (let k = i; k <= j && safe; k++) {
+        if (!isSideEffectFree(ops[k])) safe = false;
+      }
       const shouldAutofix = safe || !autofixSafeOnly;
       const applyFix = (fixer) => fixer.replaceText(node, rewrite);
 
