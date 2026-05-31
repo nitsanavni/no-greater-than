@@ -123,17 +123,21 @@ gap matters less — which is why detection-only Biome is acceptable. The differ
 becomes **detection precision and false-positive rate**, where all three currently score
 perfectly on the fixtures (including TS/TSX generics and range cases).
 
-## Next: scale verification
+## Scale verification (done)
 
-"Done = verified thoroughly" → run all three across many real open-source repos and
-diff their findings:
-- Where do the three **disagree** on what to flag? (Disagreement = likely a parser/edge
-  case worth a new fixture.)
-- Any **false positives** (e.g. TSX generics `Array<T>`, JSX, type predicates) or
-  **false negatives**?
-- For ESLint specifically: does `--fix` ever produce code that fails to re-parse or
-  changes behavior?
+"Done = verified thoroughly" → a Mikado-driven eval harness (in [`workflows/`](workflows/),
+run via Claude Code **Workflows**) audits each tool on real open-source code:
+**audit → capability-aware judge → Mikado graph → worktree attempt → reconcile**, with
+**autofix verification** (apply `--fix`/`-U`, then re-parse the output and flag any
+side-effecting auto-fix).
 
-This is a good fit for a Claude Code **Workflow**: fan out one agent per repo to clone +
-run the three tools + collect disagreements, then synthesize the edge cases into new
-fixtures. (Not built yet — planned phase.)
+Run across **ky, zod, preact, express, date-fns, nest, tanstack-query**:
+- **0 false positives, 0 unsafe autofixes** — detection converged (TS/TSX generics, JSX,
+  shifts, casts all correctly ignored).
+- The eval *drove* real fixes: ast-grep's TS variants (it was silently broken on `.ts`),
+  ESLint's pure-call/instance allowlists, ast-grep's `*-impure` side-effect guard, and the
+  number-line-range feature.
+
+Open eval threads (more breadth, deliberately adversarial inputs) are tracked in
+[`internal-docs/CONCERNS.md`](internal-docs/CONCERNS.md); the per-tool Mikado graph lives in
+[`internal-docs/mikado.md`](internal-docs/mikado.md).
