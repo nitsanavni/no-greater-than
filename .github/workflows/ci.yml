@@ -1,0 +1,38 @@
+name: CI
+
+on:
+  push:
+  pull_request:
+
+jobs:
+  checks:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 20
+
+      - name: eslint plugin tests (node:test)
+        run: cd eslint && npm ci && node --test
+
+      - name: install ast-grep CLI
+        run: npm i -g @ast-grep/cli
+
+      - name: ast-grep rule tests
+        run: cd ast-grep && ast-grep test
+
+      - name: biome lint flags the expected 12 sites
+        run: |
+          count=$(npx --yes @biomejs/biome lint --config-path biome/biome.json fixtures/sample.js 2>&1 | grep -c 'better:' || true)
+          echo "biome flagged $count sites"
+          if [ "$count" -ne 12 ]; then
+            echo "Expected biome to flag 12 sites, got $count" >&2
+            exit 1
+          fi
+
+      - name: EXAMPLES.md is fresh vs fixtures/cases.json
+        run: |
+          node scripts/gen-examples.mjs
+          git diff --exit-code EXAMPLES.md
