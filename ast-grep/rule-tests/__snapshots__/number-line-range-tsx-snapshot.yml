@@ -1,0 +1,23 @@
+id: number-line-range-tsx
+snapshots:
+  a > lo && a < hi:
+    fixed: (lo) < (a) && (a) < (hi)
+    labels:
+    - source: a > lo && a < hi
+      style: primary
+      start: 0
+      end: 16
+  x < 10 && x > 5:
+    fixed: (5) < (x) && (x) < (10)
+    labels:
+    - source: x < 10 && x > 5
+      style: primary
+      start: 0
+      end: 15
+  x > 5 && x < 10:
+    fixed: (5) < (x) && (x) < (10)
+    labels:
+    - source: x > 5 && x < 10
+      style: primary
+      start: 0
+      end: 15

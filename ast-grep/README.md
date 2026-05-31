@@ -8,6 +8,9 @@ A grep/lint/codemod hybrid (tree-sitter, Rust). The whole rule is a few lines of
 
 - `rules/no-greater-than{,-ts,-tsx}.yml` — `$A > $B` → `($B) < ($A)` for JS / TS / TSX
 - `rules/no-greater-or-equal{,-ts,-tsx}.yml` — `$A >= $B` → `($B) <= ($A)` for JS / TS / TSX
+- `rules/number-line-range{,-ts,-tsx}.yml` — two-sided **between** range → `($LO) < ($X) && ($X) < ($HI)` for JS / TS / TSX
+- `rules/number-line-range-or{,-ts,-tsx}.yml` — two-sided **outside** range → `($X) < ($LO) || ($HI) < ($X)` for JS / TS / TSX
+- `rules/number-line-range*-impure.yml` — detect-only companions for ranges whose **bound** operand has a side effect
 - `sgconfig.yml` — points ast-grep at `rules/` and the test dir
 - `rule-tests/` — `ast-grep test` cases + snapshots
 
@@ -50,6 +53,39 @@ The fixer is a **text/template substitution** — it can't branch on operand sha
    **changing evaluation order**. (The boolean result is still identical.)
 3. **Needs repeated passes for nested matches.** One `scan -U` fixes the outer
    comparison of `a > b > c`; the inner one needs another pass.
+
+## Number-line range ordering
+
+A two-sided range reads clearest as an ascending number line. These rules
+normalise the scrambled orderings to a canonical form:
+
+- **between** (`&&`): `lo < x && x < hi`
+- **outside** (`||`): `x < lo || hi < x`
+
+Because an ast-grep fix is a single non-branching template, a permutation is
+only auto-fixed when every scrambled form maps to the **same** canonical
+output. Both `&&` permutations do (both → `($LO) < ($X) && ($X) < ($HI)`), and
+both `||` permutations do (both → `($X) < ($LO) || ($HI) < ($X)`), so all four
+are covered by a correct fix:
+
+| Pattern | Rule | Status |
+| --- | --- | --- |
+| `$X > $LO && $X < $HI` | `number-line-range` | **fix** |
+| `$X < $HI && $X > $LO` | `number-line-range` | **fix** |
+| `$X < $LO \|\| $X > $HI` | `number-line-range-or` | **fix** |
+| `$X > $HI \|\| $X < $LO` | `number-line-range-or` | **fix** |
+| any of the above with a side-effecting **bound** | `number-line-range*-impure` | **detect-only** (no fix) |
+
+The same side-effect guard as `no-greater-than` applies: when a **bound**
+operand (`$LO` / `$HI`) contains a call / update / assignment / await, the
+order-reordering fix is suppressed and a detect-only `*-impure` rule reports it
+instead. (TS/TSX variants mirror the JS rules.)
+
+**Known gap:** a side effect on the **shared** `$X` operand — e.g.
+`x++ > 5 && x < 10` — is matched by *neither* rule. `$X` appears twice in the
+pattern and must bind to identical source text on both sides, so `x++`
+(left) ≠ `x` (right) and the whole pattern fails to match. This is an inherent
+limit of declarative metavar matching, not a fixable template choice.
 
 These limits are *the point of the comparison* — see [`../COMPARISON.md`](../COMPARISON.md).
 For this project's "detect precisely, let an agent fix" workflow, ast-grep's

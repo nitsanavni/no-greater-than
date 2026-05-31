@@ -1,0 +1,22 @@
+id: number-line-range-impure
+valid:
+  # Pure ranges are handled (and auto-fixed) by `number-line-range`, not here.
+  - "x > 5 && x < 10"
+  - "x < 10 && x > 5"
+  - "5 < x && x < 10"
+  # Not a two-sided range at all.
+  - "a < b && c < d"
+  # LIMITATION: a side effect on the SHARED $X operand is NOT matched at all.
+  # `$X` appears twice in the pattern, so it must bind identically on both
+  # sides; `x++` (update_expression) on the left can't equal `x` (identifier)
+  # on the right, so the whole pattern fails to match. These slip past both
+  # the fix rule and this detect-only rule -- a known gap, not auto-rewritten.
+  - "x++ > 5 && x < 10"
+  - "x > 5 && (y = 1) < 10"
+invalid:
+  # A side effect in a BOUND operand ($LO / $HI) still matches the range
+  # pattern, so it is reported detect-only (no fix) here.
+  - "f() > 5 && f() < 10"
+  - "x > 5 && x < f()"
+  - "x > f() && x < 10"
+  - "x > (y = 1) && x < 10"
