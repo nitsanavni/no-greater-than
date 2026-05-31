@@ -31,22 +31,36 @@ variable `$x` and registers a static teaching message:
 - **between** (`&&`): better → `lo < x && x < hi`
 - **outside** (`||`): better → `x < lo || hi < x`
 
-Matched shapes (all require the same `$x` on both sides — GritQL enforces metavariable
-equality, so `x > 1 && y < 10` is *not* matched as a range):
+It covers **strict, inclusive, mixed, and half-open** bounds (real OSS code uses all of
+them — e.g. `x >= 100 && x <= 599` or `x >= 100 && x < 200`). All shapes require the same
+`$x` on both sides — GritQL enforces metavariable equality, so `x > 1 && y < 10` is *not*
+matched as a range.
 
-- between: `x > lo && x < hi`, `x < hi && x > lo`, `lo < x && x > hi`, `hi > x && x < lo`
-- outside: `x > hi || x < lo`, `x < lo || x > hi`, `hi < x || x < lo`, `x > hi || lo > x`
+Matched shapes:
 
-**Canonical-exclusion worked.** The canonical between form `5 < x && x < 10` and the canonical
-outside form `x < 1 || 10 < x` use *only* `<`, while every scrambled shape above involves a `>`
-or reorders the clauses — so canonical ranges are **not** flagged. Verified: `5 < x && x < 10`
-and `x < 1 || 10 < x` produce no range diagnostic.
+- **strict between**: `x > lo && x < hi`, `x < hi && x > lo`, `lo < x && x > hi`, `hi > x && x < lo`
+- **inclusive between**: `x >= lo && x <= hi`, `x <= hi && x >= lo`, `lo <= x && x >= hi`, `hi >= x && x <= lo`
+- **mixed / half-open between**: `x >= lo && x < hi`, `x < hi && x >= lo`, `x > lo && x <= hi`,
+  `x <= hi && x > lo`, `lo <= x && x > hi`, `lo < x && x >= hi`, `hi >= x && x < lo`, `hi > x && x <= lo`
+- **strict outside**: `x > hi || x < lo`, `x < lo || x > hi`, `hi < x || x < lo`, `x > hi || lo > x`
+- **inclusive / mixed outside**: `x >= hi || x <= lo`, `x <= lo || x >= hi`, `hi <= x || x <= lo`, `x >= hi || lo >= x`
 
-Residual limitation: detection keys on syntactic shape, not numeric semantics. A clause-order
-variant that happens to already read canonically but uses a different operator arrangement could
-in principle slip through or, conversely, an unusual canonical phrasing not in the list above is
-simply not matched. The set is tuned to flag scrambled ranges while leaving the two standard
-canonical forms clean.
+**Canonical-exclusion worked.** The canonical forms keep the small bound on the left and the
+large bound on the right, and use only `<` / `<=` — never `>` / `>=`:
+
+- canonical between: `5 < x && x < 10`, `100 <= x && x <= 599`, `1 <= x && x < 9`
+- canonical outside: `x < 1 || 10 < x`, `x <= 1 || 10 <= x`
+
+Every scrambled shape above either involves a `>` / `>=`, or flips a bound onto the wrong side
+of `x`, so the canonical forms are **not** flagged. Verified: `100 <= x && x <= 599` and the
+canonical outside forms produce no range diagnostic, while scrambled `x <= 9 && x >= 1`,
+`x >= 100 && x < 200`, `x <= 1 || x >= 10`, etc. do.
+
+Residual limitation: detection keys on syntactic shape, not numeric semantics, and there is no
+per-site message interpolation (see above). A canonical phrasing not in the lists above is simply
+not matched. Because Biome plugins can't apply fixes, we deliberately prefer **fewer false
+positives** over catching every exotic rearrangement — the set flags the common scrambled
+strict / inclusive / half-open ranges while leaving the standard canonical forms clean.
 
 ## Files
 

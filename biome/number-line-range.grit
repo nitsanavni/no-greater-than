@@ -8,14 +8,22 @@
 //   outside (`||`):  x < lo || hi < x
 //
 // We match ranges where the SAME middle variable $x appears on the "wrong" side
-// of a `>` (i.e. a `>` is involved at all), since the canonical between/outside
-// shapes use only `<`. Already-canonical ranges use exclusively `<`, so they do
-// not contain a `>` and are not matched here — that gives clean exclusion for
-// the common cases. See README for the residual limitation.
+// of the comparison. The canonical between/outside shapes always read with the
+// smaller bound on the LEFT and the larger on the RIGHT:
+//   strict:    `lo < x && x < hi` / `x < lo || hi < x`
+//   inclusive: `lo <= x && x <= hi` / `x <= lo || hi <= x`
+//   half-open: `lo <= x && x < hi`, etc. — also canonical when bounds stay
+//              left/right ordered.
+// A range is "scrambled" when a clause flips the bound onto the wrong side,
+// i.e. it uses `>` or `>=` (x bigger than the low bound written on x's left),
+// or it reorders the two clauses so the high-side test comes first. Canonical
+// ranges never contain a `>`/`>=` and keep the bound-on-left ordering, so they
+// are NOT matched. See README for the residual limitation.
 
 language js
 
 or {
+  // ---------- STRICT between (`<` / `>`) ----------
   // between: `$x > $lo && $x < $hi`  (e.g. x > 1 && x < 10)
   `$x > $lo && $x < $hi` where {
     register_diagnostic(
@@ -30,7 +38,7 @@ or {
       message = "Order this range like a number line — better: `lo < x && x < hi`"
     )
   },
-  // between: `$lo < $x && $x > $lo2`  (e.g. 1 < x && x > 0) — second clause uses `>`
+  // between: `$lo < $x && $x > $hi`  (e.g. 1 < x && x > 0) — second clause uses `>`
   `$lo < $x && $x > $hi` where {
     register_diagnostic(
       span = $x,
@@ -44,6 +52,98 @@ or {
       message = "Order this range like a number line — better: `lo < x && x < hi`"
     )
   },
+
+  // ---------- INCLUSIVE between (`<=` / `>=`) ----------
+  // Canonical inclusive `lo <= x && x <= hi` keeps bounds on the outside and
+  // uses NO `>=`, so it is not matched by any branch below.
+  // scrambled: `$x >= $lo && $x <= $hi`  (e.g. x >= 100 && x <= 599)
+  `$x >= $lo && $x <= $hi` where {
+    register_diagnostic(
+      span = $x,
+      message = "Order this range like a number line — better: `lo < x && x < hi`"
+    )
+  },
+  // scrambled (reordered): `$x <= $hi && $x >= $lo`  (e.g. x <= 9 && x >= 1)
+  `$x <= $hi && $x >= $lo` where {
+    register_diagnostic(
+      span = $x,
+      message = "Order this range like a number line — better: `lo < x && x < hi`"
+    )
+  },
+  // scrambled: `$lo <= $x && $x >= $hi` — second clause uses `>=`
+  `$lo <= $x && $x >= $hi` where {
+    register_diagnostic(
+      span = $x,
+      message = "Order this range like a number line — better: `lo < x && x < hi`"
+    )
+  },
+  // scrambled: `$hi >= $x && $x <= $lo` — first clause uses `>=`
+  `$hi >= $x && $x <= $lo` where {
+    register_diagnostic(
+      span = $x,
+      message = "Order this range like a number line — better: `lo < x && x < hi`"
+    )
+  },
+
+  // ---------- MIXED / HALF-OPEN between (one `<`/`<=`, one `>`/`>=`/flipped) ----------
+  // scrambled: `$x >= $lo && $x < $hi`  (e.g. x >= 100 && x < 200)
+  `$x >= $lo && $x < $hi` where {
+    register_diagnostic(
+      span = $x,
+      message = "Order this range like a number line — better: `lo < x && x < hi`"
+    )
+  },
+  // scrambled (reordered): `$x < $hi && $x >= $lo`
+  `$x < $hi && $x >= $lo` where {
+    register_diagnostic(
+      span = $x,
+      message = "Order this range like a number line — better: `lo < x && x < hi`"
+    )
+  },
+  // scrambled: `$x > $lo && $x <= $hi`
+  `$x > $lo && $x <= $hi` where {
+    register_diagnostic(
+      span = $x,
+      message = "Order this range like a number line — better: `lo < x && x < hi`"
+    )
+  },
+  // scrambled (reordered): `$x <= $hi && $x > $lo`
+  `$x <= $hi && $x > $lo` where {
+    register_diagnostic(
+      span = $x,
+      message = "Order this range like a number line — better: `lo < x && x < hi`"
+    )
+  },
+  // scrambled: `$lo <= $x && $x > $hi` — second clause uses `>`
+  `$lo <= $x && $x > $hi` where {
+    register_diagnostic(
+      span = $x,
+      message = "Order this range like a number line — better: `lo < x && x < hi`"
+    )
+  },
+  // scrambled: `$lo < $x && $x >= $hi` — second clause uses `>=`
+  `$lo < $x && $x >= $hi` where {
+    register_diagnostic(
+      span = $x,
+      message = "Order this range like a number line — better: `lo < x && x < hi`"
+    )
+  },
+  // scrambled: `$hi >= $x && $x < $lo` — first clause uses `>=`
+  `$hi >= $x && $x < $lo` where {
+    register_diagnostic(
+      span = $x,
+      message = "Order this range like a number line — better: `lo < x && x < hi`"
+    )
+  },
+  // scrambled: `$hi > $x && $x <= $lo` — first clause uses `>`
+  `$hi > $x && $x <= $lo` where {
+    register_diagnostic(
+      span = $x,
+      message = "Order this range like a number line — better: `lo < x && x < hi`"
+    )
+  },
+
+  // ---------- STRICT outside (`||`) ----------
   // outside: `$x > $hi || $x < $lo`  (e.g. x > 10 || x < 1)
   `$x > $hi || $x < $lo` where {
     register_diagnostic(
@@ -65,8 +165,40 @@ or {
       message = "Order this range like a number line — better: `x < lo || hi < x`"
     )
   },
-  // outside: `$x < $lo || $hi < $x`  — canonical-ish but reversed second clause; still teach shape
+  // outside: `$x > $hi || $lo > $x` — reversed second clause; still teach shape
   `$x > $hi || $lo > $x` where {
+    register_diagnostic(
+      span = $x,
+      message = "Order this range like a number line — better: `x < lo || hi < x`"
+    )
+  },
+
+  // ---------- INCLUSIVE / MIXED outside (`||` with `>=`/`<=`) ----------
+  // Canonical inclusive outside `x <= lo || hi <= x` uses NO `>=` and keeps the
+  // high bound on the LEFT of the second clause, so it is not matched below.
+  // outside: `$x >= $hi || $x <= $lo`  (e.g. x >= 10 || x <= 1)
+  `$x >= $hi || $x <= $lo` where {
+    register_diagnostic(
+      span = $x,
+      message = "Order this range like a number line — better: `x < lo || hi < x`"
+    )
+  },
+  // outside: `$x <= $lo || $x >= $hi`  (e.g. x <= 1 || x >= 10)
+  `$x <= $lo || $x >= $hi` where {
+    register_diagnostic(
+      span = $x,
+      message = "Order this range like a number line — better: `x < lo || hi < x`"
+    )
+  },
+  // outside (reordered): `$hi <= $x || $x <= $lo` — high-side test written first
+  `$hi <= $x || $x <= $lo` where {
+    register_diagnostic(
+      span = $x,
+      message = "Order this range like a number line — better: `x < lo || hi < x`"
+    )
+  },
+  // outside: `$x >= $hi || $lo >= $x` — reversed second clause
+  `$x >= $hi || $lo >= $x` where {
     register_diagnostic(
       span = $x,
       message = "Order this range like a number line — better: `x < lo || hi < x`"
