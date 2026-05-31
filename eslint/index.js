@@ -1,6 +1,7 @@
 "use strict";
 
 const noGreaterThan = require("./rules/no-greater-than");
+const numberLineRange = require("./rules/number-line-range");
 
 const plugin = {
   meta: {
@@ -9,6 +10,7 @@ const plugin = {
   },
   rules: {
     "no-greater-than": noGreaterThan,
+    "number-line-range": numberLineRange,
   },
 };
 
@@ -16,7 +18,10 @@ const plugin = {
 plugin.configs = {
   recommended: {
     plugins: { "no-greater-than": plugin },
-    rules: { "no-greater-than/no-greater-than": "warn" },
+    rules: {
+      "no-greater-than/no-greater-than": "warn",
+      "no-greater-than/number-line-range": "warn",
+    },
   },
 };
 
