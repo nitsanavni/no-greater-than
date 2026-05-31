@@ -1,15 +1,17 @@
 "use strict";
 
 const { RuleTester } = require("eslint");
-const { test } = require("node:test");
+const { describe, it } = require("node:test");
 const rule = require("../rules/no-greater-than");
+
+RuleTester.describe = describe;
+RuleTester.it = it;
 
 const ruleTester = new RuleTester({
   languageOptions: { ecmaVersion: 2022, sourceType: "module" },
 });
 
-test("no-greater-than (RuleTester)", () => {
-  ruleTester.run("no-greater-than", rule, {
+ruleTester.run("no-greater-than", rule, {
     valid: [
       "a < b;",
       "a <= b;",
@@ -156,5 +158,4 @@ test("no-greater-than (RuleTester)", () => {
         errors: 1,
       },
     ],
-  });
 });

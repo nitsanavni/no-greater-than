@@ -1,15 +1,17 @@
 "use strict";
 
 const { RuleTester } = require("eslint");
-const { test } = require("node:test");
+const { describe, it } = require("node:test");
 const rule = require("../rules/number-line-range");
+
+RuleTester.describe = describe;
+RuleTester.it = it;
 
 const ruleTester = new RuleTester({
   languageOptions: { ecmaVersion: 2022, sourceType: "module" },
 });
 
-test("number-line-range (RuleTester)", () => {
-  ruleTester.run("number-line-range", rule, {
+ruleTester.run("number-line-range", rule, {
     valid: [
       // already canonical
       "5 < x && x < 10;",
@@ -84,5 +86,4 @@ test("number-line-range (RuleTester)", () => {
         errors: [{ messageId: "range" }],
       },
     ],
-  });
 });
