@@ -16,19 +16,22 @@ Each tool flags `a > b` and `a >= b` and teaches the number-line rewrite (`b < a
 
 ## ESLint
 
-The plugin lives in the `eslint/` **subdirectory**, so a plain
-`npm i -D github:nitsanavni/no-greater-than` does **not** work (npm looks for a root
-`package.json`, and the popular `gitpkg` subdir shim is now offline — it returns
-HTTP 402). The reliable no-publish path is to **vendor the subdir with [degit](https://github.com/Rich-Harris/degit)**
-and install it as a local `file:` dependency.
+**One-step install (verified):**
 
 ```bash
-# 1. Vendor just the eslint/ subdir (no .git, no node_modules pulled in)
-npx degit nitsanavni/no-greater-than/eslint vendor/eslint-plugin-no-greater-than
-
-# 2. Install it as a local dependency, plus eslint itself
-npm i -D ./vendor/eslint-plugin-no-greater-than eslint
+npm i -D eslint github:nitsanavni/eslint-plugin-no-greater-than
 ```
+
+The plugin lives in the `eslint/` **subdirectory** here, so a `github:` install off
+*this* repo can't work (npm needs a root `package.json`). Instead, `eslint/` is
+mirrored to its own standalone public repo —
+[`nitsanavni/eslint-plugin-no-greater-than`](https://github.com/nitsanavni/eslint-plugin-no-greater-than)
+— whose root **is** the package, so the clean one-liner above resolves directly
+(plain JS, `main: index.js`, no build step or extra peer deps). This monorepo stays
+the source of truth; the mirror is regenerated with
+[`scripts/sync-eslint-mirror.sh`](scripts/sync-eslint-mirror.sh) (one command:
+re-runs the subtree split, re-banners the mirror README, and force-pushes the
+mirror's `main`).
 
 Then enable the bundled flat-config preset (`eslint.config.mjs`):
 
@@ -45,20 +48,32 @@ npx eslint .          # report (warnings)
 npx eslint . --fix    # auto-rewrite >/>= to </<= where safe
 ```
 
-Verified output:
+Verified end-to-end (`sample.js` containing `a > b;` and `x > 5 && x < 10;`):
 
 ```
 sample.js
-  2:7  warning  Use '<' instead of '>' so the comparison reads like a number line. Rewrite as: b < a   no-greater-than/no-greater-than
-  3:7  warning  Use '<=' instead of '>=' ...                                                            no-greater-than/no-greater-than
+  1:3  warning  Use '<' instead of '>' ... Rewrite as: b < a            no-greater-than/no-greater-than
+  2:1  warning  Order this range like a number line. Rewrite as: 5 < x && x < 10   no-greater-than/number-line-range
+  2:3  warning  Use '<' instead of '>' ... Rewrite as: 5 < x            no-greater-than/no-greater-than
 ```
 
-`--fix` rewrote `if (a > b)` → `if (b < a)` and `if (a >= b)` → `if (b <= a)`.
+`--fix` rewrote `a > b;` → `b < a;` and `x > 5 && x < 10;` → `5 < x && x < 10;`.
+
+### Fallback: vendor the subdir with degit
+
+If you'd rather not install from GitHub directly, **vendor the subdir with
+[degit](https://github.com/Rich-Harris/degit)** and install it as a local `file:`
+dependency:
+
+```bash
+# 1. Vendor just the eslint/ subdir (no .git, no node_modules pulled in)
+npx degit nitsanavni/no-greater-than/eslint vendor/eslint-plugin-no-greater-than
+
+# 2. Install it as a local dependency, plus eslint itself
+npm i -D ./vendor/eslint-plugin-no-greater-than eslint
+```
 
 To update later: re-run the `degit` command (it overwrites the vendored copy).
-
-> Want it without vendoring (`npm i -D github:...`)? That requires the plugin at a
-> repo root — see [Recommendation](#recommendation).
 
 ---
 
@@ -147,22 +162,14 @@ sample.js:3:5 plugin
 For ast-grep and Biome, the consumer naturally vendors/clones a few config files —
 that is already the idiomatic, frictionless path, so no repo change is warranted.
 
-**For ESLint, splitting the plugin into its own dedicated repo is worth it.** Because
-the plugin sits in `eslint/`, the one-liner most users expect —
+**For ESLint, the plugin now has its own dedicated repo** — done because the plugin
+sits in `eslint/`, so the one-liner most users expect cannot resolve off this repo
+(no root `package.json`; the old subdir shim `gitpkg` is offline, HTTP 402). The fix:
+mirror `eslint/`'s contents to the *root* of a standalone public repo,
+[`nitsanavni/eslint-plugin-no-greater-than`](https://github.com/nitsanavni/eslint-plugin-no-greater-than).
 
-```bash
-npm i -D github:nitsanavni/eslint-plugin-no-greater-than
-```
-
-— cannot work here (no root `package.json`), and the subdir shim `gitpkg` is now
-offline (HTTP 402). The degit-vendor path above is reliable but is two steps and a
-`file:` dependency.
-
-This was tested: pushing `eslint/`'s contents to a repo *root* makes the clean
-one-liner work directly — `npm i -D github:<owner>/<repo>` resolved and linted with
-zero extra steps, autofix included.
-
-So: **if the ESLint plugin gets meaningful external use, mirror `eslint/` into a
-standalone `eslint-plugin-no-greater-than` repo** (this monorepo can stay the source
-of truth and push to it). Until then, the degit instructions above are the
-no-publish answer.
+This was verified end-to-end: `npm i -D github:nitsanavni/eslint-plugin-no-greater-than`
+resolves with zero extra steps and both rules lint + autofix correctly (see the
+ESLint section above). The monorepo stays the source of truth; regenerate the mirror
+with [`scripts/sync-eslint-mirror.sh`](scripts/sync-eslint-mirror.sh). The degit path
+above remains as a no-GitHub-install fallback.
