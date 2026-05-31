@@ -30,6 +30,10 @@ ast-grep scan -U <file>                       # apply fixes in place
 ast-grep test                                 # run rule tests
 ```
 
+> **Gotcha — `--json` line numbers are 0-indexed.** When parsing `ast-grep scan --json`,
+> `range.start.line` is **0-based**, so it reads one lower than editor / ESLint / Biome
+> line numbers. Add 1 when comparing or displaying.
+
 ## What it does well
 
 - **Terse**: the rule is the pattern `$A > $B` and a fix template. No code.
