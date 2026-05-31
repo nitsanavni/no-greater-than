@@ -1,0 +1,75 @@
+// Biome GritQL plugin: detect scrambled two-sided number-line ranges.
+//
+// Like `no-greater-than.grit`, this is DETECTION-ONLY and the message CANNOT
+// interpolate the matched operands ($x prints literally — verified). So we
+// detect scrambled ranges that share a variable and teach the canonical shape
+// with a STATIC template (not the actual operands at the site):
+//   between (`&&`):  lo < x && x < hi
+//   outside (`||`):  x < lo || hi < x
+//
+// We match ranges where the SAME middle variable $x appears on the "wrong" side
+// of a `>` (i.e. a `>` is involved at all), since the canonical between/outside
+// shapes use only `<`. Already-canonical ranges use exclusively `<`, so they do
+// not contain a `>` and are not matched here — that gives clean exclusion for
+// the common cases. See README for the residual limitation.
+
+language js
+
+or {
+  // between: `$x > $lo && $x < $hi`  (e.g. x > 1 && x < 10)
+  `$x > $lo && $x < $hi` where {
+    register_diagnostic(
+      span = $x,
+      message = "Order this range like a number line — better: `lo < x && x < hi`"
+    )
+  },
+  // between: `$x < $hi && $x > $lo`  (e.g. x < 10 && x > 1)
+  `$x < $hi && $x > $lo` where {
+    register_diagnostic(
+      span = $x,
+      message = "Order this range like a number line — better: `lo < x && x < hi`"
+    )
+  },
+  // between: `$lo < $x && $x > $lo2`  (e.g. 1 < x && x > 0) — second clause uses `>`
+  `$lo < $x && $x > $hi` where {
+    register_diagnostic(
+      span = $x,
+      message = "Order this range like a number line — better: `lo < x && x < hi`"
+    )
+  },
+  // between: `$hi > $x && $x < $lo`  (e.g. 10 > x && x < ...) — first clause uses `>`
+  `$hi > $x && $x < $lo` where {
+    register_diagnostic(
+      span = $x,
+      message = "Order this range like a number line — better: `lo < x && x < hi`"
+    )
+  },
+  // outside: `$x > $hi || $x < $lo`  (e.g. x > 10 || x < 1)
+  `$x > $hi || $x < $lo` where {
+    register_diagnostic(
+      span = $x,
+      message = "Order this range like a number line — better: `x < lo || hi < x`"
+    )
+  },
+  // outside: `$x < $lo || $x > $hi`  (e.g. x < 1 || x > 10)
+  `$x < $lo || $x > $hi` where {
+    register_diagnostic(
+      span = $x,
+      message = "Order this range like a number line — better: `x < lo || hi < x`"
+    )
+  },
+  // outside: `$hi < $x || $x < $lo`  (e.g. 10 < x || x < 1) — first clause uses `<` with x on right
+  `$hi < $x || $x < $lo` where {
+    register_diagnostic(
+      span = $x,
+      message = "Order this range like a number line — better: `x < lo || hi < x`"
+    )
+  },
+  // outside: `$x < $lo || $hi < $x`  — canonical-ish but reversed second clause; still teach shape
+  `$x > $hi || $lo > $x` where {
+    register_diagnostic(
+      span = $x,
+      message = "Order this range like a number line — better: `x < lo || hi < x`"
+    )
+  }
+}
